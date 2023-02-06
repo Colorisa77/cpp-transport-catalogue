@@ -2,16 +2,13 @@
 #include <string>
 #include <deque>
 
+#include "transport_catalogue.h"
+
 namespace stat_reader {
-	class StatReader {
-	public:
-		StatReader(std::deque<std::string> task_show)
-			: requests_(std::move(task_show)) {
-		}
 
-		void DoShowRequest();
+	std::string RouteLengthFormatting(std::string route_length);
 
-	private:
-		std::deque<std::string> requests_;
-	};
+	void StatReader(transport_catalogue::TransportCatalogue& transport_catalogue, std::ostream& output);
+	void PrintBusInfo(transport_catalogue::BusInfo& bus_info, std::ostream& output);
+	void PrintStopInfo(transport_catalogue::StopInfo& stop_info, std::ostream& output);
 }

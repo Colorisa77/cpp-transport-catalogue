@@ -4,6 +4,7 @@
 #include<deque>
 #include<unordered_map>
 
+#include "transport_catalogue.h"
 #include "geo.h"
 
 using namespace transport_catalogue::detail;
@@ -11,13 +12,16 @@ using namespace transport_catalogue::detail;
 namespace input_reader {
 	class InputReader {
 	public:
-		explicit InputReader(int num);
-
+		void SetNumOfRequests(std::istream& input);
+		bool IsNumOfRequestsCorrect() const;
+		int GetNumOfRequests() const;
+		void FillingTheQuery(std::istream& input);
 		void AddInQuery(std::string line);
 		void ClearQuery();
 		std::deque<std::string> GetQuery() const;
 
 	private:
+		int num_of_requests_ = 0;
 		std::deque<std::string> query_;
 	};
 }
@@ -56,3 +60,7 @@ namespace parser {
 
 	};
 }
+
+void ParseStopToStopString(transport_catalogue::TransportCatalogue* transport_catalogue, const std::string stop_name, std::string distance_for_each_stop);
+
+void ProcessingCommandsByFilling(transport_catalogue::TransportCatalogue& transport_catalogue, bool& is_finished, std::istream& input_stream);
