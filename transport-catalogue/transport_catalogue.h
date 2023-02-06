@@ -63,10 +63,7 @@ namespace transport_catalogue {
 		double GetStopToStopDistance(const Stop* from, const Stop* to) const;
 		std::vector<const Stop*> GetStopsByBusName(std::string name) const;
 		
-		bool IsStopExist(std::string) const;
-		
 		void AddStopToStopDistances(const std::string stop_name, const std::string other_stop_name, std::string distance);
-
 
 	private:
 		std::deque<Bus> buses_;

@@ -142,13 +142,6 @@ namespace transport_catalogue {
 		tasks_show_.clear();
 	}
 
-	bool TransportCatalogue::IsStopExist(std::string name) const {
-		if (stop_index_.count(name) > 0) {
-			return true;
-		}
-		return false;
-	}
-
 	std::vector<const Stop*> TransportCatalogue::GetStopsByBusName(std::string name) const {
 		return buses_index_.at(name)->stops;
 	}
