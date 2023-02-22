@@ -2,6 +2,7 @@
 #include <iostream>
 
 #include "input_reader.h"
+#include "stat_reader.h"
 
 using namespace transport_catalogue::detail;
 
@@ -46,12 +47,16 @@ namespace input_reader {
         query_.push_back(std::move(line));
     }
 
+    void InputReader::AddInStopToStopDistQuery(std::string stop, std::string line) {
+        stop_to_stop_dist_query_[stop].insert(line);
+    }
+
     std::deque<std::string> InputReader::GetQuery() const {
         return query_;
     }
 
-    void InputReader::ClearQuery() {
-        query_.clear();
+    std::unordered_map<std::string, std::unordered_set<std::string>> InputReader::GetStopToStopDistQuery() const {
+        return stop_to_stop_dist_query_;
     }
 }
 
@@ -63,12 +68,12 @@ namespace parser {
         while (!input.empty()) {
             std::string str_query = input.front();
             if (IsShowRequest(str_query)) {
-                AddInTasksShow(str_query);
+                AddShowingTask(str_query);
             }
             else if (IsBusRequest(str_query)) {
                 std::string route_name = GetRouteName(str_query);
                 std::vector<std::string> stop_names = GetStopNames(str_query);
-                AddInTasksAddBuses(route_name, stop_names);
+                AddTaskAddingBus(route_name, stop_names);
             }
             else {
                 std::string stop_name = GetStopName(str_query);
@@ -77,11 +82,11 @@ namespace parser {
                 std::string distanse_for_each_stop = str_query.substr(comma_pos + 1);
                 comma_pos = distanse_for_each_stop.find(",");
                 if (comma_pos == std::string::npos) {
-                    AddInTasksAddStops(stop_name, coords, "");
+                    AddTaskAddingStop(stop_name, coords, "");
                 }
                 else {
                     distanse_for_each_stop = distanse_for_each_stop.substr(comma_pos + 2);
-                    AddInTasksAddStops(stop_name, coords, distanse_for_each_stop);
+                    AddTaskAddingStop(stop_name, coords, distanse_for_each_stop);
                 }
             }
             input.pop_front();
@@ -142,13 +147,8 @@ namespace parser {
         return stop_names;
     }
 
-    std::deque<std::string> Parser::GetShowTasks() const {
+    std::deque<std::string> Parser::GetShowingTasks() const {
         return tasks_show_;
-    }
-
-    std::string Parser::GetShowRequest(std::string str) const {
-        size_t first_space_pos = str.find_first_of(" ");
-        return str.substr(first_space_pos + 1, str.size());
     }
 
     Coordinates Parser::GetStopCoordinates(std::string str) const {
@@ -170,23 +170,23 @@ namespace parser {
         return { latitude, longitude };
     }
 
-    StopTasks Parser::GetAddStopsTasks() const {
+    StopTasks Parser::GetAddingStopsTasks() const {
         return tasks_add_stops_;
     }
 
-    BusTasks Parser::GetAddBusTasks() const {
+    BusTasks Parser::GetAddingBusTasks() const {
         return tasks_add_buses_;
     }
 
-    void Parser::AddInTasksShow(std::string str) {
+    void Parser::AddShowingTask(std::string str) {
         tasks_show_.push_back(std::move(str));
     }
 
-    void Parser::AddInTasksAddStops(std::string str, Coordinates coordinates, std::string distance_for_each_stop) {
+    void Parser::AddTaskAddingStop(std::string str, Coordinates coordinates, std::string distance_for_each_stop) {
         tasks_add_stops_[str] = { coordinates, distance_for_each_stop };
     }
 
-    void Parser::AddInTasksAddBuses(std::string str, std::vector<std::string> stop_names) {
+    void Parser::AddTaskAddingBus(std::string str, std::vector<std::string> stop_names) {
         tasks_add_buses_[str] = std::move(stop_names);
     }
 }
@@ -204,7 +204,7 @@ void ParseStopToStopString(transport_catalogue::TransportCatalogue* transport_ca
         distance_for_each_stop = distance_for_each_stop.substr(m + 5);
         other_stop_name = distance_for_each_stop.substr(0, distance_for_each_stop.find(','));
         distance_for_each_stop = distance_for_each_stop.substr(distance_for_each_stop.find(',') + 2);
-        transport_catalogue->AddStopToStopDistances(stop_name, other_stop_name, distance);
+        transport_catalogue->SetStopToStopDistances(stop_name, other_stop_name, distance);
         comma_pos = distance_for_each_stop.find(',');
         m = distance_for_each_stop.find('m');
     }
@@ -212,35 +212,40 @@ void ParseStopToStopString(transport_catalogue::TransportCatalogue* transport_ca
     distance = distance_for_each_stop.substr(0, m);
     distance_for_each_stop = distance_for_each_stop.substr(m + 5);
     other_stop_name = distance_for_each_stop;
-    transport_catalogue->AddStopToStopDistances(stop_name, other_stop_name, distance);
+    transport_catalogue->SetStopToStopDistances(stop_name, other_stop_name, distance);
 }
 
 void ProcessingCommandsByFilling(transport_catalogue::TransportCatalogue& transport_catalogue, bool& is_finished, std::istream& input_stream) {
     input_reader::InputReader input_queue;
-    input_queue.SetNumOfRequests(std::cin);
+    input_queue.SetNumOfRequests(input_stream);
     if (!input_queue.IsNumOfRequestsCorrect()) {
         is_finished = true;
         return;
     }
     int currnet_request = 0;
     while (currnet_request != input_queue.GetNumOfRequests()) {
-        input_queue.FillingTheQuery(std::cin);
+        input_queue.FillingTheQuery(input_stream);
         ++currnet_request;
     }
     parser::Parser parser(input_queue.GetQuery());
-    for (auto& [name, coord_and_dist] : parser.GetAddStopsTasks()) {
-        transport_catalogue.AddStop(name, coord_and_dist.first, coord_and_dist.second);
+    for (auto& [name, coord_and_dist] : parser.GetAddingStopsTasks()) {
+        transport_catalogue.AddStop(name, coord_and_dist.first);
+        input_queue.AddInStopToStopDistQuery(name, coord_and_dist.second);
     }
 
-    for (auto& [stop_name, dist_to_other_stop] : transport_catalogue.GetStopToStopDistanceTasks()) {
-        ParseStopToStopString(&transport_catalogue, stop_name, dist_to_other_stop);
+    for(auto& [stop_name, dist_to_other_stop] : input_queue.GetStopToStopDistQuery()) {
+        for(std::string line : dist_to_other_stop) {
+            ParseStopToStopString(&transport_catalogue, stop_name, line);
+        }
     }
 
-    for (auto& [name, vect_stops] : parser.GetAddBusTasks()) {
+    for (auto& [name, vect_stops] : parser.GetAddingBusTasks()) {
         bool is_circle;
         vect_stops.front() == vect_stops.back() ? is_circle = true : is_circle = false;
         transport_catalogue.AddBus(name, vect_stops, is_circle);
     }
-    transport_catalogue.SetShowTasks(std::move(parser.GetShowTasks()));
-    input_queue.ClearQuery();
+
+    for(std::string request : parser.GetShowingTasks()) {
+        stat_reader::StatReader(transport_catalogue, request, std::cout);
+    }
 }

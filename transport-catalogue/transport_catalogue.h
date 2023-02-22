@@ -48,14 +48,8 @@ namespace transport_catalogue {
 		std::vector<const Stop*> GetBusRouteByName(const std::string_view route_name) const;
 		Stop GetStopByName(const std::string_view stop_name) const;
 
-		void AddStop(std::string stop_name, detail::Coordinates coordinates, std::string distance_for_each_stop);
-		void AddBus(std::string bus_name, std::vector<std::string>& vect_stops, bool is_circle);
-
-		std::unordered_map<std::string, std::string> GetStopToStopDistanceTasks() const;
-
-		void SetShowTasks(std::deque<std::string> task_show);
-		std::deque<std::string> GetShowTasks() const;
-		void ClearShowTasks();
+		void AddStop(std::string stop_name, detail::Coordinates coordinates);
+		void AddBus(std::string bus_name, const std::vector<std::string>& vect_stops, bool is_circle);
 
 		std::set<std::string_view> GetBusesByStop(std::string_view stop_name) const;
 		const Bus* GetBusByName(const std::string name) const;
@@ -63,14 +57,15 @@ namespace transport_catalogue {
 		double GetStopToStopDistance(const Stop* from, const Stop* to) const;
 		std::vector<const Stop*> GetStopsByBusName(std::string name) const;
 		
-		void AddStopToStopDistances(const std::string stop_name, const std::string other_stop_name, std::string distance);
+		bool IsStopExist(std::string) const;
+		
+		void SetStopToStopDistances(const std::string stop_name, const std::string other_stop_name, std::string distance);
+
 
 	private:
 		std::deque<Bus> buses_;
 		std::deque<Stop> stops_;
-		std::deque<std::string> queries_;
-		std::unordered_map<std::string, std::string> tasks_stop_to_stop_distance_;
-		std::deque<std::string> tasks_show_;
+		std::deque<std::string> stop_and_buses_names_;
 		std::unordered_map<std::string_view, const Bus*> buses_index_;
 		std::unordered_map<std::string_view, const Stop*> stop_index_;
 		std::unordered_map<std::string_view, std::set<std::string_view>> buses_by_stop_;

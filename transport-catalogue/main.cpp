@@ -14,6 +14,5 @@ int main()
         if (is_finished == true) {
             break;
         }
-        stat_reader::StatReader(transport_catalogue, std::cout);
     }
 }

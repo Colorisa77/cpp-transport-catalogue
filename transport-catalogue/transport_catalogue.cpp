@@ -1,5 +1,4 @@
 #include <iomanip>
-#include <stdexcept>
 
 #include "transport_catalogue.h"
 #include "input_reader.h"
@@ -13,26 +12,16 @@ namespace transport_catalogue {
 		return std::hash<const void*>()(p.first) * std::hash<const void*>()(p.second) * 1000000 + 43;
 	}
 
-	void TransportCatalogue::AddStop(std::string stop_name, detail::Coordinates coordinates, std::string distance_for_each_stop) {
+	void TransportCatalogue::AddStop(std::string stop_name, detail::Coordinates coordinates) {
 		if (stop_index_.count(stop_name) == 0) {
-			queries_.push_back(stop_name);
-			stops_.push_back({ queries_.back(), coordinates});
+			stop_and_buses_names_.push_back(stop_name);
+			stops_.push_back({ stop_and_buses_names_.back(), coordinates});
 			std::string_view view_name = stops_.back().name;
 			stop_index_[view_name] = &stops_.back();
-			if (distance_for_each_stop != "") {
-				tasks_stop_to_stop_distance_[stop_name] = distance_for_each_stop;
-			}
-		}
-		else {
-			throw std::invalid_argument("Stop " + stop_name + " already exist\n");
 		}
 	}
 
-	std::unordered_map<std::string, std::string> TransportCatalogue::GetStopToStopDistanceTasks() const {
-		return tasks_stop_to_stop_distance_;
-	}
-
-	void TransportCatalogue::AddStopToStopDistances(const std::string stop_name, const std::string other_stop_name, std::string distance) {
+	void TransportCatalogue::SetStopToStopDistances(const std::string stop_name, const std::string other_stop_name, std::string distance) {
 		if (stop_to_stop_distances_.count({ stop_index_[other_stop_name], stop_index_[stop_name] }) == 0) {
 			stop_to_stop_distances_[{ stop_index_[stop_name], stop_index_[other_stop_name] }] = std::stod(distance);
 			stop_to_stop_distances_[{ stop_index_[other_stop_name], stop_index_[stop_name] }] = std::stod(distance);
@@ -42,23 +31,20 @@ namespace transport_catalogue {
 		}
 	}
 
-	void TransportCatalogue::AddBus(std::string bus_name, std::vector<std::string>& vect_stops, bool is_circle) {
+	void TransportCatalogue::AddBus(std::string bus_name, const std::vector<std::string>& vect_stops, bool is_circle) {
 		if (buses_index_.count(bus_name) == 0) {
 			std::vector<const Stop*> stops;
 			for (std::string stop : vect_stops) {
 				stops.push_back(stop_index_.at(stop));
 			}
-			queries_.push_back(bus_name);
-			buses_.push_back({ queries_.back(), stops, is_circle});
+			stop_and_buses_names_.push_back(bus_name);
+			buses_.push_back({ stop_and_buses_names_.back(), stops, is_circle});
 			std::string_view bus_name_view = buses_.back().name;
 			buses_index_[bus_name_view] = &buses_.back();
 			for (std::string_view stop : vect_stops) {
 				std::string_view stop_name = stop_index_[stop]->name;
 				buses_by_stop_[stop_name].insert(buses_.back().name);
 			}
-		}
-		else {
-			throw std::invalid_argument("Bus " + bus_name + " already exist\n");
 		}
 	}
 
@@ -130,16 +116,11 @@ namespace transport_catalogue {
 		return stop_to_stop_distances_.at({ from, to });
 	}
 
-	void TransportCatalogue::SetShowTasks(std::deque<std::string> task_show) {
-		tasks_show_ = std::move(task_show);
-	}
-
-	std::deque<std::string> TransportCatalogue::GetShowTasks() const {
-		return tasks_show_;
-	}
-
-	void TransportCatalogue::ClearShowTasks() {
-		tasks_show_.clear();
+	bool TransportCatalogue::IsStopExist(std::string name) const {
+		if (stop_index_.count(name) > 0) {
+			return true;
+		}
+		return false;
 	}
 
 	std::vector<const Stop*> TransportCatalogue::GetStopsByBusName(std::string name) const {
