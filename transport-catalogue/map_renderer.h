@@ -107,7 +107,7 @@ namespace renderer {
         svg::Color GetColor() const;
 
         size_t current_color_ = 0;
-        std::unordered_map<size_t, json::Node> possible_colors_for_route_lines_;
+        std::unordered_map<size_t, json::Node> color_palette_;
         std::map<std::string_view, svg::Polyline> routes_polyline_;
         std::map<std::string_view, std::deque<svg::Text>> routes_texts_;
         std::map<std::string_view, std::deque<svg::Circle>> stops_circles_;

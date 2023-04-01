@@ -4,27 +4,68 @@ using namespace std;
 
 namespace json {
 
-    Node::Node(Array array) :
-    value_(std::move(array)) {}
+    bool Node::operator==(const Node& rhs) const { return GetValue() == rhs.GetValue(); }
 
-    Node::Node(bool value) :
-            value_(value) {}
+    const Value& Node::GetValue() const { return *this; }
+    bool Node::IsNull() const { return std::holds_alternative<std::nullptr_t>(*this); }
+    bool Node::IsBool() const { return std::holds_alternative<bool>(*this); }
+    bool Node::IsInt() const { return std::holds_alternative<int>(*this); }
+    bool Node::IsPureDouble() const { return std::holds_alternative<double>(*this); }
+    bool Node::IsDouble() const { return IsInt() || IsPureDouble(); }
+    bool Node::IsArray() const { return std::holds_alternative<Array>(*this); }
+    bool Node::IsMap() const { return std::holds_alternative<Dict>(*this); }
+    bool Node::IsString() const { return std::holds_alternative<std::string>(*this); }
 
-    Node::Node(std::nullptr_t) :
-    Node() {}
+    int Node::AsInt() const {
+        using namespace std::literals;
+        if (!IsInt()) {
+            throw std::logic_error("Not an int"s);
+        }
+        return std::get<int>(*this);
+    }
 
-    Node::Node(Dict map) :
-    value_(std::move(map)) {}
+    double Node::AsDouble() const {
+        using namespace std::literals;
+        if (!IsDouble()) {
+            throw std::logic_error("Not a double"s);
+        }
+        return IsPureDouble() ? std::get<double>(*this) : AsInt();
+    }
+    bool Node::AsBool() const {
+        using namespace std::literals;
+        if (!IsBool()) {
+            throw std::logic_error("Not a bool"s);
+        }
+        return std::get<bool>(*this);
+    }
+    const Array& Node::AsArray() const {
+        using namespace std::literals;
+        if (!IsArray()) {
+            throw std::logic_error("Not an array"s);
+        }
+        return std::get<Array>(*this);
+    }
+    const std::string& Node::AsString() const {
+        using namespace std::literals;
+        if (!IsString()) {
+            throw std::logic_error("Not a string"s);
+        }
+        return std::get<std::string>(*this);
+    }
+     const Dict& Node::AsMap() const {
+        using namespace std::literals;
+        if (!IsMap()) {
+            throw std::logic_error("Not a dict"s);
+        }
+        return std::get<Dict>(*this);
+    }
 
-    Node::Node(int value) :
-            value_(value) {}
+    Document::Document(Node root) 
+        :root_(std::move(root)) {  
+    }
 
-    Node::Node(double value) :
-            value_(value) {}
-
-//    Node::Node(std::string value) :
-//    value_(std::move(value)) {}
-
+    const Node& Document::GetRoot() const { return root_; }
+    
     namespace {
 
         Node LoadNode(istream& input);

@@ -5,13 +5,20 @@ using namespace std::literals;
 
 namespace json_reader {
     void FillStopsByRequestBody(transport_catalogue::TransportCatalogue& transport_catalogue, const json::Node& request_body) {
-        geo::Coordinates coordinates {request_body.AsMap().at("latitude"s).AsDouble(), request_body.AsMap().at("longitude"s).AsDouble()};
+        geo::Coordinates coordinates {
+            request_body.AsMap().at("latitude"s).AsDouble(), 
+            request_body.AsMap().at("longitude"s).AsDouble()
+        };
         transport_catalogue.AddStop(request_body.AsMap().at("name"s).AsString(), coordinates);
     }
 
     void FillStopToStopDistances(transport_catalogue::TransportCatalogue& transport_catalogue, const json::Node& stop_to_stop_distance) {
         for(const auto& [second_stop_name, distance] : stop_to_stop_distance.AsMap().at("road_distances"s).AsMap()) {
-            transport_catalogue.SetStopToStopDistances(stop_to_stop_distance.AsMap().at("name"s).AsString(), second_stop_name, distance.AsDouble());
+            transport_catalogue.SetStopToStopDistances(
+                stop_to_stop_distance.AsMap().at("name"s).AsString(), 
+                second_stop_name, 
+                distance.AsDouble()
+            );
         }
     }
 
@@ -20,7 +27,11 @@ namespace json_reader {
         for(const auto& stop : add_buses_request.AsMap().at("stops"s).AsArray()) {
             stops.push_back(stop.AsString());
         }
-        transport_catalogue.AddBus(add_buses_request.AsMap().at("name"s).AsString(), stops, (add_buses_request.AsMap().at("is_roundtrip"s).AsBool()));
+        transport_catalogue.AddBus(
+            add_buses_request.AsMap().at("name"s).AsString(),
+            stops, 
+            add_buses_request.AsMap().at("is_roundtrip"s).AsBool()
+        );
     }
 
     std::string EscapingAString(const std::ostringstream& svg_output) {
@@ -104,52 +115,52 @@ namespace json_reader {
     }
 
 
-    Json_Reader::Json_Reader(std::istream& input) 
+    JsonReader::JsonReader(std::istream& input) 
         : doc_(json::Load(input)) {
     }
 
-    const json::Array& Json_Reader::GetBaseRequests() const {
+    const json::Array& JsonReader::GetBaseRequests() const {
         return doc_.GetRoot().AsMap().at("base_requests"s).AsArray();
     }
 
-    const json::Dict& Json_Reader::GetRenderSettings() const {
+    const json::Dict& JsonReader::GetRenderSettings() const {
         return doc_.GetRoot().AsMap().at("render_settings"s).AsMap();
     }
 
-    const json::Array& Json_Reader::GetStatRequests() const {
+    const json::Array& JsonReader::GetStatRequests() const {
         return doc_.GetRoot().AsMap().at("stat_requests"s).AsArray();
     }
 
-    void Json_Reader::AddRouteCoordinates(geo::Coordinates coordinates) {
+    void JsonReader::AddRouteCoordinates(geo::Coordinates coordinates) {
         route_coordinates_.push_back(coordinates);
     }
 
-    const std::vector<geo::Coordinates>& Json_Reader::GetRoutesCoordinate() const {
+    const std::vector<geo::Coordinates>& JsonReader::GetRoutesCoordinate() const {
         return route_coordinates_;
     }
 
-    void Json_Reader::AddStopToStopRequest(const json::Node& node) {
+    void JsonReader::AddStopToStopRequest(const json::Node& node) {
         requests_.stop_requests.push_back(node);
     }
 
-    void Json_Reader::AddBusRequest(const json::Node& node) {
+    void JsonReader::AddBusRequest(const json::Node& node) {
         requests_.bus_requests.push_back(node);
     }
 
-    const Requests& Json_Reader::GetRequests() const {
+    const Requests& JsonReader::GetRequests() const {
         return requests_;
     }
 
-    void Json_Reader::AddBusName(const std::string& bus_name) {
+    void JsonReader::AddBusName(const std::string& bus_name) {
         buses_names_.insert(bus_name);
     }
 
-    const std::set<std::string>& Json_Reader::GetBusNames() const {
+    const std::set<std::string>& JsonReader::GetBusNames() const {
         return buses_names_;
     }
 
     void SequentialRequestProcessing(transport_catalogue::TransportCatalogue& transport_catalogue, renderer::MapRenderer& map_render, std::istream& input, std::ostream& output, request_handler::RequestHandler& request_handler) {
-        Json_Reader json_reader(input);
+        JsonReader json_reader(input);
         for(const auto& request_body : json_reader.GetBaseRequests()) {
             if(request_body.AsMap().at("type"s).AsString() == "Stop"s) {
                 FillStopsByRequestBody(transport_catalogue, request_body);
@@ -158,7 +169,10 @@ namespace json_reader {
                     {"road_distances"s, request_body.AsMap().at("road_distances"s).AsMap()}
                 };
                 json_reader.AddStopToStopRequest(stop_to_stop_distance_request);
-                json_reader.AddRouteCoordinates({request_body.AsMap().at("latitude"s).AsDouble(), request_body.AsMap().at("longitude"s).AsDouble()});
+                json_reader.AddRouteCoordinates({
+                    request_body.AsMap().at("latitude"s).AsDouble(), 
+                    request_body.AsMap().at("longitude"s).AsDouble()
+                });
                 continue;
             }
             if(request_body.AsMap().at("type"s).AsString() == "Bus"s) {
@@ -177,29 +191,38 @@ namespace json_reader {
 
         } 
 
-        renderer::MapVisualizationSettings settings(json_reader.GetRenderSettings().at("width"s).AsDouble(), json_reader.GetRenderSettings().at("height"s).AsDouble(), json_reader.GetRenderSettings().at("padding"s).AsDouble());
+        renderer::MapVisualizationSettings settings(
+            json_reader.GetRenderSettings().at("width"s).AsDouble(), 
+            json_reader.GetRenderSettings().at("height"s).AsDouble(), 
+            json_reader.GetRenderSettings().at("padding"s).AsDouble()
+        );
         auto route_coordinates = request_handler.GetCoordinates();
-        renderer::SphereProjector projector(route_coordinates.begin(), route_coordinates.end(), settings.max_width, settings.max_height, settings.padding);
+        renderer::SphereProjector projector(
+            route_coordinates.begin(), 
+            route_coordinates.end(), 
+            settings.max_width, 
+            settings.max_height, 
+            settings.padding
+        );
         map_render.SetPossibleColors(json_reader.GetRenderSettings().at("color_palette"s).AsArray());
 
-        for(const auto& bus : json_reader.GetBusNames()) {
-            const auto& b = request_handler.GetBus(bus);
-            if(b != nullptr) {
-                size_t pos = (b->stops.size()) / 2;
-                map_render.AddNewPointByRouteName(bus, projector(b->stops.front()->coordinates), json_reader.GetRenderSettings());
-                map_render.AddNewTextForRoute(bus, projector(b->stops.front()->coordinates), json_reader.GetRenderSettings());
-                map_render.AddNewCircleForStop(b->stops.front()->name, projector(b->stops.front()->coordinates), json_reader.GetRenderSettings());
-                map_render.AddNewTextForStop(b->stops.front()->name, projector(b->stops.front()->coordinates), json_reader.GetRenderSettings());
-                if(b->is_circle == false && b->stops.at(pos) != b->stops.front()) {
-                    map_render.AddNewTextForRoute(bus, projector(b->stops.at(pos)->coordinates), json_reader.GetRenderSettings());
+        for(const auto& bus_name : json_reader.GetBusNames()) {
+            const auto& bus = request_handler.GetBus(bus_name);
+            if(bus != nullptr) {
+                size_t pos = (bus->stops.size()) / 2;
+                map_render.AddNewPointByRouteName(bus_name, projector(bus->stops.front()->coordinates), json_reader.GetRenderSettings());
+                map_render.AddNewTextForRoute(bus_name, projector(bus->stops.front()->coordinates), json_reader.GetRenderSettings());
+                map_render.AddNewCircleForStop(bus->stops.front()->name, projector(bus->stops.front()->coordinates), json_reader.GetRenderSettings());
+                map_render.AddNewTextForStop(bus->stops.front()->name, projector(bus->stops.front()->coordinates), json_reader.GetRenderSettings());
+                if(bus->is_circle == false && bus->stops.at(pos) != bus->stops.front()) {
+                    map_render.AddNewTextForRoute(bus_name, projector(bus->stops.at(pos)->coordinates), json_reader.GetRenderSettings());
                 }
-                size_t i = 1;
-                for(; i < b->stops.size() - 1; ++i) {
-                    map_render.AddNewPointByRouteName(bus, projector(b->stops.at(i)->coordinates), json_reader.GetRenderSettings());
-                    map_render.AddNewCircleForStop(b->stops.at(i)->name, projector(b->stops.at(i)->coordinates), json_reader.GetRenderSettings());
-                    map_render.AddNewTextForStop(b->stops.at(i)->name, projector(b->stops.at(i)->coordinates), json_reader.GetRenderSettings());
+                for(size_t i = 1; i < bus->stops.size() - 1; ++i) {
+                    map_render.AddNewPointByRouteName(bus_name, projector(bus->stops.at(i)->coordinates), json_reader.GetRenderSettings());
+                    map_render.AddNewCircleForStop(bus->stops.at(i)->name, projector(bus->stops.at(i)->coordinates), json_reader.GetRenderSettings());
+                    map_render.AddNewTextForStop(bus->stops.at(i)->name, projector(bus->stops.at(i)->coordinates), json_reader.GetRenderSettings());
                 }
-                map_render.AddNewPointByRouteName(bus, projector(b->stops.back()->coordinates), json_reader.GetRenderSettings());
+                map_render.AddNewPointByRouteName(bus_name, projector(bus->stops.back()->coordinates), json_reader.GetRenderSettings());
                 map_render.ChangeCurrentColor();
             }
         }

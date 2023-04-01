@@ -8,9 +8,9 @@ using namespace std::literals;
 
 namespace json_reader {
 
-    class Json_Reader {
+    class JsonReader {
     public:
-        Json_Reader(std::istream& input);
+        JsonReader(std::istream& input);
 
         const json::Array& GetBaseRequests() const;
         const json::Dict& GetRenderSettings() const;
