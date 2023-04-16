@@ -92,8 +92,7 @@ namespace json_reader {
         }
         json::Dict response = json::Builder{}
             .StartDict()
-                .Key("request_id"s)
-                .Value(request_body.AsDict().at("id"s).AsInt())
+                .Key("request_id"s).Value(request_body.AsDict().at("id"s).AsInt())
                 .Key("error_message"s).Value("not found"s)
             .EndDict()
         .Build().AsDict();
