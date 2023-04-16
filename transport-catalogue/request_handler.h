@@ -1,6 +1,7 @@
 #pragma once
 #include "transport_catalogue.h"
 #include "map_renderer.h"
+#include "json_builder.h"
 #include "json.h"
 #include <optional>
 

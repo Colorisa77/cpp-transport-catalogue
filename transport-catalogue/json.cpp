@@ -13,7 +13,7 @@ namespace json {
     bool Node::IsPureDouble() const { return std::holds_alternative<double>(*this); }
     bool Node::IsDouble() const { return IsInt() || IsPureDouble(); }
     bool Node::IsArray() const { return std::holds_alternative<Array>(*this); }
-    bool Node::IsMap() const { return std::holds_alternative<Dict>(*this); }
+    bool Node::IsDict() const { return std::holds_alternative<Dict>(*this); }
     bool Node::IsString() const { return std::holds_alternative<std::string>(*this); }
 
     int Node::AsInt() const {
@@ -52,9 +52,9 @@ namespace json {
         }
         return std::get<std::string>(*this);
     }
-     const Dict& Node::AsMap() const {
+     const Dict& Node::AsDict() const {
         using namespace std::literals;
-        if (!IsMap()) {
+        if (!IsDict()) {
             throw std::logic_error("Not a dict"s);
         }
         return std::get<Dict>(*this);

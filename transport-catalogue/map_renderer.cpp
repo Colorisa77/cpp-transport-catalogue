@@ -21,7 +21,7 @@ namespace renderer {
 
     void MapRenderer::AddNewPointByRouteName(const std::string& route_name, const svg::Point& point, const json::Node& render_attachmets) {
         using namespace std::literals;
-        double line_width = render_attachmets.AsMap().at("line_width"s).AsDouble();
+        double line_width = render_attachmets.AsDict().at("line_width"s).AsDouble();
         svg::Color color = GetColor();
         if(routes_polyline_.count(route_name) > 0) {
             routes_polyline_.at(route_name)
@@ -47,10 +47,10 @@ namespace renderer {
         using namespace std::literals;
         svg::Text text;
         svg::Point offset = {
-            render_attachments.AsMap().at("bus_label_offset"s).AsArray().at(0).AsDouble(),
-            render_attachments.AsMap().at("bus_label_offset"s).AsArray().at(1).AsDouble()
+            render_attachments.AsDict().at("bus_label_offset"s).AsArray().at(0).AsDouble(),
+            render_attachments.AsDict().at("bus_label_offset"s).AsArray().at(1).AsDouble()
         };
-        uint32_t font_size = static_cast<uint32_t>(render_attachments.AsMap().at("bus_label_font_size"s).AsInt());
+        uint32_t font_size = static_cast<uint32_t>(render_attachments.AsDict().at("bus_label_font_size"s).AsInt());
         std::string font_family = "Verdana"s;
         std::string font_weight = "bold"s;
         svg::Color color = GetColor();
@@ -73,12 +73,12 @@ namespace renderer {
         using namespace std::literals;
         svg::Text text_substrate;
         svg::Color fill_and_stoke_color = GetColorFromNode(render_attachments);
-        double stroke_width = render_attachments.AsMap().at("underlayer_width"s).AsDouble();
+        double stroke_width = render_attachments.AsDict().at("underlayer_width"s).AsDouble();
         svg::Point offset = {
-            render_attachments.AsMap().at("bus_label_offset"s).AsArray().at(0).AsDouble(),
-            render_attachments.AsMap().at("bus_label_offset"s).AsArray().at(1).AsDouble()
+            render_attachments.AsDict().at("bus_label_offset"s).AsArray().at(0).AsDouble(),
+            render_attachments.AsDict().at("bus_label_offset"s).AsArray().at(1).AsDouble()
         };
-        uint32_t font_size = static_cast<uint32_t>(render_attachments.AsMap().at("bus_label_font_size"s).AsInt());
+        uint32_t font_size = static_cast<uint32_t>(render_attachments.AsDict().at("bus_label_font_size"s).AsInt());
         svg::StrokeLineCap line_cap = svg::StrokeLineCap::ROUND;
         svg::StrokeLineJoin line_join = svg::StrokeLineJoin::ROUND;
         std::string font_family = "Verdana"s;
@@ -101,7 +101,7 @@ namespace renderer {
         } 
         using namespace std::literals;
         svg::Circle circle;
-        double radius = render_attachments.AsMap().at("stop_radius"s).AsDouble();
+        double radius = render_attachments.AsDict().at("stop_radius"s).AsDouble();
         svg::Color color("white"s);
         circle.SetCenter(point).SetRadius(radius).SetFillColor(color);
         stops_circles_[stop_name].push_back(circle);
@@ -115,10 +115,10 @@ namespace renderer {
         svg::Text text;
         svg::Color fill("black"s);
         svg::Point offset = {
-            render_attachments.AsMap().at("stop_label_offset"s).AsArray().at(0).AsDouble(),
-            render_attachments.AsMap().at("stop_label_offset"s).AsArray().at(1).AsDouble()
+            render_attachments.AsDict().at("stop_label_offset"s).AsArray().at(0).AsDouble(),
+            render_attachments.AsDict().at("stop_label_offset"s).AsArray().at(1).AsDouble()
         };
-        uint32_t font_size = static_cast<uint32_t>(render_attachments.AsMap().at("stop_label_font_size"s).AsInt());
+        uint32_t font_size = static_cast<uint32_t>(render_attachments.AsDict().at("stop_label_font_size"s).AsInt());
         std::string font_family = "Verdana"s;
         std::string stop = {stop_name.data(), stop_name.size()};
         svg::Text text_substrate = SetNewSubstrateForText(point, render_attachments);
@@ -182,7 +182,7 @@ namespace renderer {
     svg::Color MapRenderer::GetColorFromNode(const json::Node& render_attachments) const {
         using namespace std::literals;
         svg::Color color;
-        json::Node attachments = render_attachments.AsMap().at("underlayer_color"s);
+        json::Node attachments = render_attachments.AsDict().at("underlayer_color"s);
         if(attachments.IsString()) {
             color = attachments.AsString();
         } else if (attachments.IsArray() && attachments.AsArray().size() >= 3) {

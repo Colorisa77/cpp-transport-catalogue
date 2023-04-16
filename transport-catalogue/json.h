@@ -23,6 +23,7 @@ namespace json {
     public:
         using Value::Value;
 
+        
         bool operator==(const Node& rhs) const;
 
         [[nodiscard]] const Value& GetValue() const;
@@ -32,7 +33,7 @@ namespace json {
         [[nodiscard]] bool IsPureDouble() const;
         [[nodiscard]] bool IsDouble() const;
         [[nodiscard]] bool IsArray() const;
-        [[nodiscard]] bool IsMap() const;
+        [[nodiscard]] bool IsDict() const;
         [[nodiscard]] bool IsString() const;
 
         int AsInt() const;
@@ -40,7 +41,7 @@ namespace json {
         bool AsBool() const;
         const Array& AsArray() const;
         const std::string& AsString() const;
-        const Dict& AsMap() const;
+        const Dict& AsDict() const;
     };
 
     inline bool operator!=(const Node& lhs, const Node& rhs) {

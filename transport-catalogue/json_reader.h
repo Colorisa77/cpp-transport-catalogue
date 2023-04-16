@@ -1,6 +1,7 @@
 #pragma once
 #include <iostream>
 #include "request_handler.h"
+#include "json_builder.h"
 #include "json.h"
 
 #include <set>
@@ -39,10 +40,10 @@ namespace json_reader {
     void FillStopToStopDistances(transport_catalogue::TransportCatalogue& transport_catalogue, const json::Node& stop_to_stop_distance);
     void FillRoutesByRequestBody(transport_catalogue::TransportCatalogue& transport_catalogue, const json::Node& add_buses_request);
 
-    void GenerateResponse(request_handler::RequestHandler& request_handler, const json::Node& request_body, std::ostream& output);
+    json::Node GenerateResponse(request_handler::RequestHandler& request_handler, const json::Node& request_body, std::ostream& output);
 
-    void AddStopInfoResponse(request_handler::RequestHandler& request_handler, const json::Node& request_body, json::Array& responses);
-    void AddBusInfoResponse(request_handler::RequestHandler& request_handler, const json::Node& request_body, json::Array& responses);
+    json::Node AddStopInfoResponse(request_handler::RequestHandler& request_handler, const json::Node& request_body);
+    json::Node AddBusInfoResponse(request_handler::RequestHandler& request_handler, const json::Node& request_body);
 
     void SequentialRequestProcessing(transport_catalogue::TransportCatalogue& transport_catalogue, renderer::MapRenderer& map_render, std::istream& input, std::ostream& output, request_handler::RequestHandler& request_handler);
 }
