@@ -9,8 +9,11 @@ namespace json {
     }
 
     KeyBuilder Builder::Key(const std::string& key) {
-        if(nodes_stack_.empty() || !nodes_stack_.back()->IsDict()) {
+        if(nodes_stack_.empty()) {
             throw std::logic_error("Dictionary is not started"s);
+        }
+        if(!nodes_stack_.empty() && !nodes_stack_.back()->IsDict()) {
+            throw std::logic_error("Expected dictionary start first"s);
         }
         if(!nodes_stack_.empty() && nodes_stack_.back()->IsString()) {
             throw std::logic_error("Not allowed use method Key after Key"s);

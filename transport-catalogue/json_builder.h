@@ -11,11 +11,6 @@ namespace json {
     class DictBuilder;
 
     class Builder {
-        struct AfterDict {
-            bool is_after_key_ = false;
-            bool is_after_start_dict_ = false;
-        };
-
     public:
         Builder() = default;
         ~Builder();
