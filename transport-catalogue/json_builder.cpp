@@ -8,66 +8,48 @@ namespace json {
         nodes_stack_.clear();
     }
 
-    KeyBuilderHelper Builder::Key(const std::string& key) {
-        if(stack_of_dict_info_.empty()) {
+    KeyBuilder Builder::Key(const std::string& key) {
+        if(nodes_stack_.empty() || !nodes_stack_.back()->IsDict()) {
             throw std::logic_error("Dictionary is not started"s);
         }
-        if(!nodes_stack_.empty() && (nodes_stack_.back()->IsDict() && stack_of_dict_info_.back().is_after_key_ == true)) {
+        if(!nodes_stack_.empty() && nodes_stack_.back()->IsString()) {
             throw std::logic_error("Not allowed use method Key after Key"s);
         }
-        curr_key_ = key;
-        stack_of_dict_info_.back().is_after_start_dict_ = false;
-        stack_of_dict_info_.back().is_after_key_ = true;
-        return KeyBuilderHelper(*this);
+        Node* new_node = new Node(key);
+        nodes_stack_.emplace_back(new_node);
+        return KeyBuilder(*this);
     }
 
     Builder& Builder::Value(const Node& value) {
-        if(curr_node_ < 0) {
+        if(nodes_stack_.empty()) {
             if(!root_.IsNull()) {
                 throw std::logic_error("Value is already set"s);
             }
             root_ = std::move(value);
         } else {
-            if(curr_node_ < 0) {
-                throw std::logic_error("Array is not started"s);
-            }
-            if(nodes_stack_[curr_node_]->IsArray() == true) {
-               const_cast<Array&>(nodes_stack_[curr_node_]->AsArray()).emplace_back(std::move(value));
-            } else if (nodes_stack_[curr_node_]->IsDict() == true) {
-                if(stack_of_dict_info_.back().is_after_key_ == false) {
-                    throw std::logic_error("Expected key for dictionary first"s);
-                }
-                const_cast<Dict&>(nodes_stack_[curr_node_]->AsDict())[curr_key_] = std::move(value);
-                stack_of_dict_info_.back().is_after_key_ = false;
+            if(nodes_stack_.back()->IsArray()) {
+               const_cast<Array&>(nodes_stack_.back()->AsArray()).emplace_back(std::move(value));
+            } else if (nodes_stack_.back()->IsDict()) {
+                throw std::logic_error("Expected key for dictionary first"s); 
+            } else if (nodes_stack_.back()->IsString()) {
+                std::string curr_key = std::move(nodes_stack_.back()->AsString());
+                delete nodes_stack_.back();
+                nodes_stack_.pop_back();
+                const_cast<Dict&>(nodes_stack_.back()->AsDict())[curr_key] = std::move(value);
             } else {
                 throw std::logic_error("current node is not Array or Dictionary"s);
             }
         }
-        if(!stack_of_dict_info_.empty()) {
-            stack_of_dict_info_.back().is_after_key_ = false;
-        }
         return *this;
     }
 
-    DictBuilderHelper Builder::StartDict() {
-        if(!stack_of_dict_info_.empty() && (stack_of_dict_info_.back().is_after_start_dict_ == true)) {
-            throw std::logic_error("Expected key for dictionary first"s);
-        }
-        if(!nodes_stack_.empty() && (nodes_stack_.back()->IsDict() && stack_of_dict_info_.back().is_after_key_ == false)) {
-            throw std::logic_error("Expected key for dictionary first"s);
-        }
+    DictBuilder Builder::StartDict() {
         if(!nodes_stack_.empty() && nodes_stack_.back()->IsDict()) {
-            stack_of_dict_info_.back().is_after_key_ = false;
+            throw std::logic_error("Expected key for dictionary first"s);
         }
         Node* new_node = new Node(Dict{});
-        nodes_stack_.push_back(new_node);
-        stack_of_dict_keys_.push_back(curr_key_);
-        curr_key_.clear();
-        ++curr_node_;
-        AfterDict afterdict{};
-        stack_of_dict_info_.push_back(afterdict);
-        stack_of_dict_info_.back().is_after_start_dict_ = true;
-        return DictBuilderHelper(*this);
+        nodes_stack_.emplace_back(new_node);
+        return DictBuilder(*this);
     }
 
     Builder& Builder::EndDict() {
@@ -77,95 +59,70 @@ namespace json {
         if(!nodes_stack_.empty() && !nodes_stack_.back()->IsDict()) {
             throw std::logic_error("Expected EndArray for array"s);
         }
-        if(stack_of_dict_info_.back().is_after_key_ == true) {
+        if(!nodes_stack_.empty() && nodes_stack_.back()->IsString()) {
             throw std::logic_error("Expected Value or start for container"s);
         }
-        if(curr_node_ == 0) {
-            root_ = std::move(*nodes_stack_[curr_node_]);
-            delete nodes_stack_[curr_node_];
+        if(nodes_stack_.size() == 1 && nodes_stack_.back()->IsDict()) {
+            root_ = std::move(*nodes_stack_.back());
+            delete nodes_stack_.back();
             nodes_stack_.pop_back();
-            --curr_node_;
-            curr_key_ = stack_of_dict_keys_.back();
         } else {
-            if(nodes_stack_[curr_node_ - 1]->IsDict() == true) {
-                Dict& prev_dict = const_cast<Dict&>(nodes_stack_[curr_node_ - 1]->AsDict());
-                Dict& curr_dict = const_cast<Dict&>(nodes_stack_[curr_node_]->AsDict());
-                prev_dict[stack_of_dict_keys_.back()] = curr_dict;
+            Dict curr_dict = std::move(nodes_stack_.back()->AsDict());
+            delete nodes_stack_.back();
+            nodes_stack_.pop_back();
+            if(nodes_stack_.back()->IsString()) {
+                std::string curr_key = std::move(nodes_stack_.back()->AsString());
                 delete nodes_stack_.back();
                 nodes_stack_.pop_back();
-                if(stack_of_dict_info_.back().is_after_start_dict_ == false) {
-                    stack_of_dict_keys_.pop_back();
-                }
-                --curr_node_;
-                curr_key_ = stack_of_dict_keys_.back();
-                stack_of_dict_info_.pop_back();
+                const_cast<Dict&>(nodes_stack_.back()->AsDict())[curr_key] = std::move(curr_dict);
             } else {
-                Array& prev_arr = const_cast<Array&>(nodes_stack_[curr_node_ - 1]->AsArray());
-                Dict& curr_dict = const_cast<Dict&>(nodes_stack_[curr_node_]->AsDict());
-                prev_arr.emplace_back(curr_dict);
-                delete nodes_stack_.back();
-                nodes_stack_.pop_back();
-                --curr_node_;
-                curr_key_ = stack_of_dict_keys_.back();
-                stack_of_dict_info_.pop_back();
+                const_cast<Array&>(nodes_stack_.back()->AsArray()).emplace_back(std::move(curr_dict));
             }
         }
         return *this;
     }
 
-    ArrayBuilderHelper Builder::StartArray() {
-        if(!stack_of_dict_info_.empty() && stack_of_dict_info_.back().is_after_start_dict_ == true) {
-            throw std::logic_error("Expected key for dictionary first"s);
-        }
-        if(!nodes_stack_.empty() && (nodes_stack_.back()->IsDict() && stack_of_dict_info_.back().is_after_key_ == false)) {
-            throw std::logic_error("Expected key for array first"s);
-        }
+    ArrayBuilder Builder::StartArray() {
         if(!nodes_stack_.empty() && nodes_stack_.back()->IsDict()) {
-            stack_of_dict_info_.back().is_after_key_ = false;
+            throw std::logic_error("Expected key for dictionary first"s);
         }
         Node* new_node = new Node(Array{});
         nodes_stack_.emplace_back(new_node);
-        ++curr_node_;
-        return ArrayBuilderHelper(*this);
+        return ArrayBuilder(*this);
     }
 
     Builder& Builder::EndArray() {
         if(nodes_stack_.empty()) {
             throw std::logic_error("Array is not started"s);
         }
-        if(!stack_of_dict_info_.empty() && (stack_of_dict_info_.back().is_after_key_ == true && !nodes_stack_.back()->IsArray())) {
+        if(!nodes_stack_.empty() && nodes_stack_.back()->IsString()) {
             throw std::logic_error("Expected Value or start for container"s);
         }
-        if(!nodes_stack_.empty() && !nodes_stack_.back()->IsArray()) {
+        /*if(!nodes_stack_.empty() && nodes_stack_.back()->IsArray()) {
             throw std::logic_error("Expected EndArray for array"s);
-        }
-        if(curr_node_ == 0) {
-            root_ = std::move(*nodes_stack_[curr_node_]);
-            delete nodes_stack_[curr_node_];
-            --curr_node_;
+        }*/
+        if(nodes_stack_.size() == 1) {
+            root_ = std::move(*nodes_stack_.back());
+            delete nodes_stack_.back();
             nodes_stack_.pop_back();
         } else {
-            if(nodes_stack_[curr_node_ - 1]->IsDict() == true) {
-                Dict& prev_dict = const_cast<Dict&>(nodes_stack_[curr_node_ - 1]->AsDict());
-                Array& curr_arr = const_cast<Array&>(nodes_stack_[curr_node_]->AsArray());
-                prev_dict[curr_key_] = curr_arr;
+            Array curr_arr = std::move(nodes_stack_.back()->AsArray());
+            delete nodes_stack_.back();
+            nodes_stack_.pop_back();
+            if(nodes_stack_.back()->IsString()) {
+                std::string curr_key = std::move(nodes_stack_.back()->AsString());
                 delete nodes_stack_.back();
                 nodes_stack_.pop_back();
-                --curr_node_;
+                const_cast<Dict&>(nodes_stack_.back()->AsDict())[curr_key] = std::move(curr_arr);
             } else {
-                Array& prev_arr = const_cast<Array&>(nodes_stack_[curr_node_ - 1]->AsArray());
-                Array& curr_arr = const_cast<Array&>(nodes_stack_[curr_node_]->AsArray());
-                prev_arr.emplace_back(curr_arr);
-                delete nodes_stack_.back();
-                nodes_stack_.pop_back();
-                --curr_node_;
+                const_cast<Array&>(nodes_stack_.back()->AsArray()).emplace_back(std::move(curr_arr));
             }
         }
         return *this;
     }
 
     Node Builder::Build() {
-        if (nodes_stack_.size() > 0 || curr_node_ != -1) {
+        if (nodes_stack_.size() > 0) {
             throw std::logic_error("Not all nodes are complite. Check curr_node_ and node_stack_"s);
         }
         if (root_.IsNull() == true) {
@@ -180,9 +137,9 @@ namespace json {
         : builder_(builder) {
     }
 
-    KeyBuilderHelper BuilderHelper::Key(const std::string& key) {
+    KeyBuilder BuilderHelper::Key(const std::string& key) {
         builder_.Key(key);
-        return KeyBuilderHelper(builder_);
+        return KeyBuilder(builder_);
     }
 
     Builder& BuilderHelper::Value(const json::Node& value) {
@@ -190,9 +147,9 @@ namespace json {
         return builder_;
     }
     
-    DictBuilderHelper BuilderHelper::StartDict() {
+    DictBuilder BuilderHelper::StartDict() {
         builder_.StartDict();
-        return DictBuilderHelper(builder_);
+        return DictBuilder(builder_);
     }
 
     Builder& BuilderHelper::EndDict() {
@@ -200,9 +157,9 @@ namespace json {
         return builder_;
     }
 
-    ArrayBuilderHelper BuilderHelper::StartArray() {
+    ArrayBuilder BuilderHelper::StartArray() {
         builder_.StartArray();
-        return ArrayBuilderHelper(builder_);
+        return ArrayBuilder(builder_);
     }
 
     Builder& BuilderHelper::EndArray() {
@@ -214,25 +171,18 @@ namespace json {
         return builder_.Build();
     }
 
-    //=================== ValueAfterStartArrayBuilderHelper ===================//
+    //=================== KeyBuilder ===================//
 
-    ValueAfterStartArrayBuilderHelper ValueAfterStartArrayBuilderHelper::Value(const json::Node& value) {
+    DictBuilder KeyBuilder::Value(const json::Node& value) {
         builder_.Value(value);
-        return ValueAfterStartArrayBuilderHelper(builder_);
+        return DictBuilder(builder_);
     }
 
-    //=================== KeyBuilderHelper ===================//
+    //=================== ArrayBuilder ===================//
 
-    ValueAfterKeyBuilderHelper KeyBuilderHelper::Value(const json::Node& value) {
+    ArrayBuilder ArrayBuilder::Value(const json::Node& value) {
         builder_.Value(value);
-        return ValueAfterKeyBuilderHelper(builder_);
-    }
-
-    //=================== ArrayBuilderHelper ===================//
-
-    ValueAfterStartArrayBuilderHelper ArrayBuilderHelper::Value(const json::Node& value) {
-        builder_.Value(value);
-        return ValueAfterStartArrayBuilderHelper(builder_);
+        return ArrayBuilder(builder_);
     }
 
 } //namespace json
