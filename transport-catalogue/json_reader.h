@@ -3,6 +3,7 @@
 #include "request_handler.h"
 #include "json_builder.h"
 #include "json.h"
+#include "transport_router.h"
 
 #include <set>
 using namespace std::literals;
@@ -16,6 +17,7 @@ namespace json_reader {
         const json::Array& GetBaseRequests() const;
         const json::Dict& GetRenderSettings() const;
         const json::Array& GetStatRequests() const;
+        const json::Dict& GetRouteSettings() const;
 
         void AddRouteCoordinates(geo::Coordinates coordinates);
         const std::vector<geo::Coordinates>& GetRoutesCoordinate() const;
@@ -40,10 +42,11 @@ namespace json_reader {
     void FillStopToStopDistances(transport_catalogue::TransportCatalogue& transport_catalogue, const json::Node& stop_to_stop_distance);
     void FillRoutesByRequestBody(transport_catalogue::TransportCatalogue& transport_catalogue, const json::Node& add_buses_request);
 
-    json::Node GenerateResponse(request_handler::RequestHandler& request_handler, const json::Node& request_body, std::ostream& output);
+    json::Node GenerateResponse(const request_handler::RequestHandler& request_handler, const router::TransportRouter<double>& router, const json::Node& request_body, std::ostream& output);
 
-    json::Node AddStopInfoResponse(request_handler::RequestHandler& request_handler, const json::Node& request_body);
-    json::Node AddBusInfoResponse(request_handler::RequestHandler& request_handler, const json::Node& request_body);
+    json::Node AddStopInfoResponse(const request_handler::RequestHandler& request_handler, const json::Node& request_body);
+    json::Node AddBusInfoResponse(const request_handler::RequestHandler& request_handler, const json::Node& request_body);
+    json::Node AddRouteInfoResponse(const router::TransportRouter<double>& router, const json::Node& request_body);
 
     void SequentialRequestProcessing(transport_catalogue::TransportCatalogue& transport_catalogue, renderer::MapRenderer& map_render, std::istream& input, std::ostream& output, request_handler::RequestHandler& request_handler);
 }

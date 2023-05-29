@@ -132,6 +132,10 @@ namespace transport_catalogue {
 		return stop_to_stop_distances_.at({ from, to });
 	}
 
+	double TransportCatalogue::GetStopToStopDistanceByName(const std::string_view from, const std::string_view to) const {
+		return GetStopToStopDistance(stop_index_.at(from), stop_index_.at(to));
+	}
+
 	bool TransportCatalogue::IsStopExist(std::string name) const {
 		if (stop_index_.count(name) > 0) {
 			return true;
@@ -148,5 +152,13 @@ namespace transport_catalogue {
 			return buses_index_.at(name);
 		}
 		return nullptr;
+	}
+
+	const std::deque<Bus>& TransportCatalogue::GetAllBuses() const {
+		return buses_;
+	}
+
+	const std::deque<Stop>& TransportCatalogue::GetAllStops() const {
+		return stops_;
 	}
 }

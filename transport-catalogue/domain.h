@@ -1,6 +1,9 @@
 #pragma once
+#include <string>
 #include <string_view>
 #include <vector>
+#include <deque>
+#include <optional>
 #include "geo.h"
 
 namespace transport_catalogue {
@@ -29,5 +32,17 @@ namespace transport_catalogue {
 		std::string_view name;
 		std::vector<const Stop*> stops;
 		bool is_circle;
+	};
+
+	struct VertexToVertex {
+		std::string type;
+		std::string_view bus_or_stop_name;
+		std::optional<int> span;
+		double time;
+	};
+
+	struct RouteInfo {
+		double total_time;
+		std::deque<VertexToVertex> list_of_items;
 	};
 }

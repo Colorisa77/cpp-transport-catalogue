@@ -26,6 +26,18 @@ namespace request_handler {
         return db_.GetStopsWithCoordinates();
     }
 
+    double RequestHandler::GetStopToStopDistance(const std::string_view from, const std::string_view to) const {
+        return db_.GetStopToStopDistanceByName(from, to);
+    }
+
+    const std::deque<transport_catalogue::Bus>& RequestHandler::GetAllBuses() const {
+        return db_.GetAllBuses();
+    }
+
+    const std::deque<transport_catalogue::Stop>& RequestHandler::GetAllStops() const {
+        return db_.GetAllStops();
+    }
+
     void RequestHandler::RenderMap(std::ostream& output) const {
         renderer_.Render(output);
     }

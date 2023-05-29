@@ -2,7 +2,6 @@
 #include <unordered_set>
 #include <unordered_map>
 #include <string>
-#include <deque>
 #include <set>
 #include "domain.h"
 
@@ -21,6 +20,9 @@ namespace transport_catalogue {
 		Stop GetStopByName(const std::string_view stop_name) const;
 		std::vector<geo::Coordinates> GetStopsWithCoordinates() const;
 
+		const std::deque<Bus>& GetAllBuses() const;
+		const std::deque<Stop>& GetAllStops() const;
+
 		void AddStop(std::string stop_name, geo::Coordinates coordinates);
 		void AddBus(std::string bus_name, std::vector<std::string>& vect_stops, bool is_circle);
 
@@ -28,6 +30,8 @@ namespace transport_catalogue {
 		const Bus* GetBusByName(const std::string name) const;
 
 		double GetStopToStopDistance(const Stop* from, const Stop* to) const;
+		double GetStopToStopDistanceByName(const std::string_view from, const std::string_view to) const;
+		
 		std::vector<const Stop*> GetStopsByBusName(std::string name) const;
 		
 		bool IsStopExist(std::string) const;

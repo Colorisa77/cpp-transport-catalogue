@@ -23,6 +23,10 @@ namespace request_handler {
         const transport_catalogue::Bus* GetBus(const std::string bus_name) const;
         transport_catalogue::Stop GetStop(const std::string_view stop_name) const;
 
+        const std::deque<transport_catalogue::Bus>& GetAllBuses() const;
+        const std::deque<transport_catalogue::Stop>& GetAllStops() const;
+
+        double GetStopToStopDistance(const std::string_view from, const std::string_view to) const;
 
         void RenderMap(std::ostream& output) const;
 

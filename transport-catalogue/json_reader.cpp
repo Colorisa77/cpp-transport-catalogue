@@ -1,5 +1,6 @@
 #include "json_reader.h"
 #include "map_renderer.h"
+#include "transport_router.h"
 #include <sstream>
 using namespace std::literals;
 
@@ -60,7 +61,7 @@ namespace json_reader {
     }
 
 
-    json::Node GenerateResponse(request_handler::RequestHandler& request_handler, const json::Node& request_body, const std::ostringstream& svg_output) {
+    json::Node GenerateResponse(const request_handler::RequestHandler& request_handler, const router::TransportRouter<double>& router, const json::Node& request_body, const std::ostringstream& svg_output) {
         json::Node result;
         if(request_body.AsDict().at("type"s).AsString() == "Stop"s) {
             result = AddStopInfoResponse(request_handler, request_body);
@@ -68,13 +69,16 @@ namespace json_reader {
         if(request_body.AsDict().at("type"s).AsString() == "Bus"s) {
             result = AddBusInfoResponse(request_handler, request_body);
         }
+        if(request_body.AsDict().at("type"s).AsString() == "Route"s) {
+            result = AddRouteInfoResponse(router, request_body);
+        }
         if(request_body.AsDict().at("type"s).AsString() == "Map"s) {
             result = AddSvgOutput(svg_output, request_body);
         }
         return result;
     }
 
-    json::Node AddStopInfoResponse(request_handler::RequestHandler& request_handler, const json::Node& request_body) {
+    json::Node AddStopInfoResponse(const request_handler::RequestHandler& request_handler, const json::Node& request_body) {
         std::optional<transport_catalogue::StopInfo> stop_info = request_handler.GetStopInfo(request_body.AsDict().at("name"s).AsString());
         if(stop_info && stop_info.value().is_empty == false) {
             json::Array stop_buses;
@@ -99,7 +103,7 @@ namespace json_reader {
         return response;
     }
 
-    json::Node AddBusInfoResponse(request_handler::RequestHandler& request_handler, const json::Node& request_body) {
+    json::Node AddBusInfoResponse(const request_handler::RequestHandler& request_handler, const json::Node& request_body) {
         std::optional<transport_catalogue::BusInfo> bus_info = request_handler.GetBusInfo(request_body.AsDict().at("name"s).AsString());
         if(bus_info && bus_info.value().is_empty == false) {
             json::Dict response = json::Builder{}
@@ -123,6 +127,44 @@ namespace json_reader {
         return response;
     }
 
+    json::Node AddRouteInfoResponse(const router::TransportRouter<double>& router, const json::Node& request_body) {
+        std::optional<transport_catalogue::RouteInfo> route_info = router.GetResponse(request_body.AsDict().at("from"s).AsString(), request_body.AsDict().at("to"s).AsString());
+        if(route_info) {
+            json::Dict result;
+            json::Builder response;
+            response.StartDict()
+                    .Key("request_id"s).Value(request_body.AsDict().at("id"s).AsInt())
+                    .Key("total_time"s).Value(route_info.value().total_time)
+                    .Key("items"s).StartArray();
+                
+            for(const auto& route : route_info.value().list_of_items) {
+                response.StartDict();
+                if(route.type == "Wait"s) {
+                    response.Key("type"s).Value(route.type)
+                            .Key("stop_name"s).Value((std::string)route.bus_or_stop_name)
+                            .Key("time"s).Value(route.time);
+                } else {
+                    response.Key("type"s).Value(route.type)
+                            .Key("bus"s).Value((std::string)route.bus_or_stop_name)
+                            .Key("span_count"s).Value(route.span.value())
+                            .Key("time"s).Value(route.time);
+                }
+                response.EndDict();
+            }
+            response.EndArray().EndDict();
+            result = response.Build().AsDict();
+            return result;
+        }
+        json::Dict response = json::Builder{}
+            .StartDict()
+                .Key("request_id"s)
+                .Value(request_body.AsDict().at("id"s).AsInt())
+                .Key("error_message"s).Value("not found"s)
+            .EndDict()
+        .Build().AsDict();
+        return response;     
+    }
+
 
     JsonReader::JsonReader(std::istream& input) 
         : doc_(json::Load(input)) {
@@ -138,6 +180,10 @@ namespace json_reader {
 
     const json::Array& JsonReader::GetStatRequests() const {
         return doc_.GetRoot().AsDict().at("stat_requests"s).AsArray();
+    }
+    
+    const json::Dict& JsonReader::GetRouteSettings() const {
+        return doc_.GetRoot().AsDict().at("routing_settings"s).AsDict();
     }
 
     void JsonReader::AddRouteCoordinates(geo::Coordinates coordinates) {
@@ -197,7 +243,15 @@ namespace json_reader {
             FillRoutesByRequestBody(transport_catalogue, add_buses_request);
             json_reader.AddBusName(add_buses_request.AsDict().at("name"s).AsString());
 
-        } 
+        }
+
+        router::TransportRouter<double> transport_router(
+            request_handler, 
+            json_reader.GetRouteSettings().at("bus_velocity"s).AsDouble(), 
+            json_reader.GetRouteSettings().at("bus_wait_time"s).AsInt()
+        );
+
+
 
         renderer::MapVisualizationSettings settings(
             json_reader.GetRenderSettings().at("width"s).AsDouble(), 
@@ -240,7 +294,7 @@ namespace json_reader {
         json::Builder responses;
         responses.StartArray();
         for(const auto& request_body : json_reader.GetStatRequests()) {
-            json::Node value = GenerateResponse(request_handler, request_body, svg_output);
+            json::Node value = GenerateResponse(request_handler, transport_router, request_body, svg_output);
             responses.Value(value);
         }
         responses.EndArray();
