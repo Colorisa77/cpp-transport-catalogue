@@ -18,10 +18,10 @@ namespace transport_catalogue {
 		StopInfo GetStopInfo(std::string_view name) const;
 		std::vector<const Stop*> GetBusRouteByName(const std::string_view route_name) const;
 		Stop GetStopByName(const std::string_view stop_name) const;
-		std::vector<geo::Coordinates> GetStopsWithCoordinates() const;
+		std::vector<geo::Coordinates> GetCoordinatesFromStopsWithCoordinates() const;
 
-		const std::deque<Bus>& GetAllBuses() const;
-		const std::deque<Stop>& GetAllStops() const;
+		std::vector<std::string_view> GetAllBusesFromCatalogue() const;
+		std::vector<std::string_view> GetAllStopsFromCatalogue() const;
 
 		void AddStop(std::string stop_name, geo::Coordinates coordinates);
 		void AddBus(std::string bus_name, std::vector<std::string>& vect_stops, bool is_circle);

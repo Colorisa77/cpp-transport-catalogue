@@ -58,7 +58,7 @@ namespace transport_catalogue {
 		}
 	}
 
-	std::vector<geo::Coordinates> TransportCatalogue::GetStopsWithCoordinates() const {
+	std::vector<geo::Coordinates> TransportCatalogue::GetCoordinatesFromStopsWithCoordinates() const {
 		if(stops_with_routes_.size() > 0) {
 			return stops_with_routes_;
 		}
@@ -154,11 +154,21 @@ namespace transport_catalogue {
 		return nullptr;
 	}
 
-	const std::deque<Bus>& TransportCatalogue::GetAllBuses() const {
-		return buses_;
+	std::vector<std::string_view> TransportCatalogue::GetAllBusesFromCatalogue() const {
+		std::vector<std::string_view> result;
+		result.reserve(buses_index_.size());
+		for(const auto [bus_name, _] : buses_index_) {
+			result.push_back(bus_name);
+		}
+		return result;
 	}
 
-	const std::deque<Stop>& TransportCatalogue::GetAllStops() const {
-		return stops_;
+	std::vector<std::string_view> TransportCatalogue::GetAllStopsFromCatalogue() const {
+		std::vector<std::string_view> result;
+		result.reserve(stop_index_.size());
+		for(const auto [stop_name, _] : stop_index_) {
+			result.push_back(stop_name);
+		}
+		return result;
 	}
 }

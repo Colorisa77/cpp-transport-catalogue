@@ -61,7 +61,7 @@ namespace json_reader {
     }
 
 
-    json::Node GenerateResponse(const request_handler::RequestHandler& request_handler, const router::TransportRouter<double>& router, const json::Node& request_body, const std::ostringstream& svg_output) {
+    json::Node GenerateResponse(const request_handler::RequestHandler& request_handler, const json::Node& request_body, const std::ostringstream& svg_output) {
         json::Node result;
         if(request_body.AsDict().at("type"s).AsString() == "Stop"s) {
             result = AddStopInfoResponse(request_handler, request_body);
@@ -70,7 +70,7 @@ namespace json_reader {
             result = AddBusInfoResponse(request_handler, request_body);
         }
         if(request_body.AsDict().at("type"s).AsString() == "Route"s) {
-            result = AddRouteInfoResponse(router, request_body);
+            result = AddRouteInfoResponse(request_handler, request_body);
         }
         if(request_body.AsDict().at("type"s).AsString() == "Map"s) {
             result = AddSvgOutput(svg_output, request_body);
@@ -127,8 +127,8 @@ namespace json_reader {
         return response;
     }
 
-    json::Node AddRouteInfoResponse(const router::TransportRouter<double>& router, const json::Node& request_body) {
-        std::optional<transport_catalogue::RouteInfo> route_info = router.GetResponse(request_body.AsDict().at("from"s).AsString(), request_body.AsDict().at("to"s).AsString());
+    json::Node AddRouteInfoResponse(const request_handler::RequestHandler& request_handler, const json::Node& request_body) {
+        std::optional<transport_catalogue::RouteInfo> route_info = request_handler.GetRouteInfo(request_body.AsDict().at("from"s).AsString(), request_body.AsDict().at("to"s).AsString());
         if(route_info) {
             json::Dict result;
             json::Builder response;
@@ -214,7 +214,14 @@ namespace json_reader {
         return buses_names_;
     }
 
-    void SequentialRequestProcessing(transport_catalogue::TransportCatalogue& transport_catalogue, renderer::MapRenderer& map_render, std::istream& input, std::ostream& output, request_handler::RequestHandler& request_handler) {
+    void SequentialRequestProcessing(
+        transport_catalogue::TransportCatalogue& transport_catalogue, 
+        router::TransportRouter& router, 
+        renderer::MapRenderer& map_render, 
+        std::istream& input, 
+        std::ostream& output, 
+        request_handler::RequestHandler& request_handler) {
+            
         JsonReader json_reader(input);
         for(const auto& request_body : json_reader.GetBaseRequests()) {
             if(request_body.AsDict().at("type"s).AsString() == "Stop"s) {
@@ -234,7 +241,6 @@ namespace json_reader {
                 json_reader.AddBusRequest(request_body);
             }
         }
-
         for(const auto& add_stop_to_stop_distance_request : json_reader.GetRequests().stop_requests) {
             FillStopToStopDistances(transport_catalogue, add_stop_to_stop_distance_request);
         }
@@ -244,21 +250,18 @@ namespace json_reader {
             json_reader.AddBusName(add_buses_request.AsDict().at("name"s).AsString());
 
         }
-
-        router::TransportRouter<double> transport_router(
-            request_handler, 
+        router.FillTransportRouter(
+            transport_catalogue, 
             json_reader.GetRouteSettings().at("bus_velocity"s).AsDouble(), 
             json_reader.GetRouteSettings().at("bus_wait_time"s).AsInt()
         );
-
-
 
         renderer::MapVisualizationSettings settings(
             json_reader.GetRenderSettings().at("width"s).AsDouble(), 
             json_reader.GetRenderSettings().at("height"s).AsDouble(), 
             json_reader.GetRenderSettings().at("padding"s).AsDouble()
         );
-        auto route_coordinates = request_handler.GetCoordinates();
+        std::vector<geo::Coordinates> route_coordinates = request_handler.GetCoordinatesFromStopsWithCoordinates();
         renderer::SphereProjector projector(
             route_coordinates.begin(), 
             route_coordinates.end(), 
@@ -288,17 +291,19 @@ namespace json_reader {
                 map_render.ChangeCurrentColor();
             }
         }
+
         std::ostringstream svg_output;
         request_handler.RenderMap(svg_output);
         json::Array result;
         json::Builder responses;
         responses.StartArray();
         for(const auto& request_body : json_reader.GetStatRequests()) {
-            json::Node value = GenerateResponse(request_handler, transport_router, request_body, svg_output);
+            json::Node value = GenerateResponse(request_handler, request_body, svg_output);
             responses.Value(value);
         }
         responses.EndArray();
         result = responses.Build().AsArray();
         json::Print(json::Document{result}, output);
+
     }
 }
