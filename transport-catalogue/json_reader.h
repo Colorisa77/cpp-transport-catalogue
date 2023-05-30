@@ -38,15 +38,24 @@ namespace json_reader {
         std::set<std::string> buses_names_;
     };
 
+    std::vector<geo::Coordinates> GetStopsCoordinates();
+
     void FillStopsByRequestBody(transport_catalogue::TransportCatalogue& transport_catalogue, const json::Node& request_body, Requests& requests);
     void FillStopToStopDistances(transport_catalogue::TransportCatalogue& transport_catalogue, const json::Node& stop_to_stop_distance);
     void FillRoutesByRequestBody(transport_catalogue::TransportCatalogue& transport_catalogue, const json::Node& add_buses_request);
 
-    json::Node GenerateResponse(const request_handler::RequestHandler& request_handler, const router::TransportRouter<double>& router, const json::Node& request_body, std::ostream& output);
+    json::Node GenerateResponse(const request_handler::RequestHandler& request_handler, const json::Node& request_body, std::ostream& output);
 
     json::Node AddStopInfoResponse(const request_handler::RequestHandler& request_handler, const json::Node& request_body);
     json::Node AddBusInfoResponse(const request_handler::RequestHandler& request_handler, const json::Node& request_body);
-    json::Node AddRouteInfoResponse(const router::TransportRouter<double>& router, const json::Node& request_body);
+    json::Node AddRouteInfoResponse(const request_handler::RequestHandler& request_handler, const json::Node& request_body);
 
-    void SequentialRequestProcessing(transport_catalogue::TransportCatalogue& transport_catalogue, renderer::MapRenderer& map_render, std::istream& input, std::ostream& output, request_handler::RequestHandler& request_handler);
+    void SequentialRequestProcessing(
+        transport_catalogue::TransportCatalogue& transport_catalogue, 
+        router::TransportRouter& router, 
+        renderer::MapRenderer& map_render, 
+        std::istream& input, 
+        std::ostream& output, 
+        request_handler::RequestHandler& request_handler
+    );
 }

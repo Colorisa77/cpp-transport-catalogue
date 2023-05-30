@@ -1,8 +1,9 @@
 #include "request_handler.h"
 
 namespace request_handler {
-    RequestHandler::RequestHandler(const transport_catalogue::TransportCatalogue& transport_catalogue, const renderer::MapRenderer& map_render) 
+    RequestHandler::RequestHandler(const transport_catalogue::TransportCatalogue& transport_catalogue, const router::TransportRouter& router, const renderer::MapRenderer& map_render) 
         :db_(std::move(transport_catalogue))
+        ,router_(std::move(router))
         ,renderer_(std::move(map_render)) {
     }
     
@@ -14,28 +15,21 @@ namespace request_handler {
         return db_.GetStopInfo(stop_name);
     }
 
-    const transport_catalogue::Bus* RequestHandler::GetBus(const std::string bus_name) const {
-        return db_.GetBusByName(bus_name);
+    std::optional<transport_catalogue::RouteInfo> RequestHandler::GetRouteInfo(const std::string_view from, const std::string_view to) const {
+        return router_.GetRouteInfo(from, to);
     }
 
-    transport_catalogue::Stop RequestHandler::GetStop(const std::string_view stop_name) const {
-        return db_.GetStopByName(stop_name);
+    const transport_catalogue::Bus* RequestHandler::GetBus(const std::string bus_name) const { 
+        return db_.GetBusByName(bus_name); 
+    } 
+
+    transport_catalogue::Stop RequestHandler::GetStop(const std::string_view stop_name) const { 
+        return db_.GetStopByName(stop_name); 
     }
 
-    std::vector<geo::Coordinates> RequestHandler::GetCoordinates() const {
-        return db_.GetStopsWithCoordinates();
-    }
 
-    double RequestHandler::GetStopToStopDistance(const std::string_view from, const std::string_view to) const {
-        return db_.GetStopToStopDistanceByName(from, to);
-    }
-
-    const std::deque<transport_catalogue::Bus>& RequestHandler::GetAllBuses() const {
-        return db_.GetAllBuses();
-    }
-
-    const std::deque<transport_catalogue::Stop>& RequestHandler::GetAllStops() const {
-        return db_.GetAllStops();
+    std::vector<geo::Coordinates> RequestHandler::GetCoordinatesFromStopsWithCoordinates() const {
+        return db_.GetCoordinatesFromStopsWithCoordinates();
     }
 
     void RequestHandler::RenderMap(std::ostream& output) const {
