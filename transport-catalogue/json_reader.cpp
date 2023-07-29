@@ -214,27 +214,19 @@ namespace json_reader {
         return buses_names_;
     }
 
-    void SequentialRequestProcessing(
-        transport_catalogue::TransportCatalogue& transport_catalogue, 
-        router::TransportRouter& router, 
-        renderer::MapRenderer& map_render, 
-        std::istream& input, 
-        std::ostream& output, 
-        request_handler::RequestHandler& request_handler) {
-            
-        JsonReader json_reader(input);
+    void FillingTransportCatalogue(transport_catalogue::TransportCatalogue& transport_catalogue, JsonReader& json_reader) {
         for(const auto& request_body : json_reader.GetBaseRequests()) {
             if(request_body.AsDict().at("type"s).AsString() == "Stop"s) {
                 FillStopsByRequestBody(transport_catalogue, request_body);
                 json::Node stop_to_stop_distance_request = json::Dict{
-                    {"name"s, request_body.AsDict().at("name"s).AsString()},
-                    {"road_distances"s, request_body.AsDict().at("road_distances"s).AsDict()}
+                        {"name"s, request_body.AsDict().at("name"s).AsString()},
+                        {"road_distances"s, request_body.AsDict().at("road_distances"s).AsDict()}
                 };
                 json_reader.AddStopToStopRequest(stop_to_stop_distance_request);
                 json_reader.AddRouteCoordinates({
-                    request_body.AsDict().at("latitude"s).AsDouble(), 
-                    request_body.AsDict().at("longitude"s).AsDouble()
-                });
+                                                        request_body.AsDict().at("latitude"s).AsDouble(),
+                                                        request_body.AsDict().at("longitude"s).AsDouble()
+                                                });
                 continue;
             }
             if(request_body.AsDict().at("type"s).AsString() == "Bus"s) {
@@ -250,6 +242,21 @@ namespace json_reader {
             json_reader.AddBusName(add_buses_request.AsDict().at("name"s).AsString());
 
         }
+    }
+
+    void SequentialRequestProcessing(
+        transport_catalogue::TransportCatalogue& transport_catalogue, 
+        router::TransportRouter& router, 
+        renderer::MapRenderer& map_render, 
+        std::istream& input, 
+        std::ostream& output, 
+        request_handler::RequestHandler& request_handler) {
+            
+        JsonReader json_reader(input);
+        FillingTransportCatalogue(transport_catalogue, json_reader);
+
+        //до этого момента нужно заполнять транспортный каталог.
+
         router.FillTransportRouter(
             transport_catalogue, 
             json_reader.GetRouteSettings().at("bus_velocity"s).AsDouble(), 

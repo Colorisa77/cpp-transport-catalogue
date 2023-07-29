@@ -50,6 +50,8 @@ namespace json_reader {
     json::Node AddBusInfoResponse(const request_handler::RequestHandler& request_handler, const json::Node& request_body);
     json::Node AddRouteInfoResponse(const request_handler::RequestHandler& request_handler, const json::Node& request_body);
 
+
+    void FillingTransportCatalogue(transport_catalogue::TransportCatalogue& transport_catalogue) ;
     void SequentialRequestProcessing(
         transport_catalogue::TransportCatalogue& transport_catalogue, 
         router::TransportRouter& router, 
