@@ -14,6 +14,7 @@ namespace json_reader {
     public:
         JsonReader(std::istream& input);
 
+        const json::Dict& GetSerializationSettingsRequests() const;
         const json::Array& GetBaseRequests() const;
         const json::Dict& GetRenderSettings() const;
         const json::Array& GetStatRequests() const;
@@ -51,7 +52,7 @@ namespace json_reader {
     json::Node AddRouteInfoResponse(const request_handler::RequestHandler& request_handler, const json::Node& request_body);
 
 
-    void FillingTransportCatalogue(transport_catalogue::TransportCatalogue& transport_catalogue) ;
+    void FillingTransportCatalogue(transport_catalogue::TransportCatalogue& transport_catalogue, JsonReader& json_reader);
     void SequentialRequestProcessing(
         transport_catalogue::TransportCatalogue& transport_catalogue, 
         router::TransportRouter& router, 

@@ -170,6 +170,10 @@ namespace json_reader {
         : doc_(json::Load(input)) {
     }
 
+    const json::Dict& JsonReader::GetSerializationSettingsRequests() const {
+        return doc_.GetRoot().AsDict().at("serialization_settings"s).AsDict();
+    }
+
     const json::Array& JsonReader::GetBaseRequests() const {
         return doc_.GetRoot().AsDict().at("base_requests"s).AsArray();
     }
