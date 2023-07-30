@@ -1,4 +1,5 @@
 #include "serialization.h"
+#include "domain.h"
 
 #include <transport_catalogue.pb.h>
 #include <fstream>
@@ -12,11 +13,10 @@ namespace serialization {
         std::ofstream out_file(file_name, std::ios::binary);
         transport_catalogue_proto::TransportCatalogue transport_catalogue_proto;
 
-        std::vector<transport_catalogue_proto::Stop> stops_proto_vector(transport_catalogue.GetAllStopsFromCatalogue().size());
-        //std::vector<transport_catalogue_proto::Bus> buses_proto_vector(transport_catalogue.GetAllBusesFromCatalogue().size());
-        //std::vector<transport_catalogue_proto::StopToStopDistance> stop_to_stop_distances_proto(transport_catalogue.GetAllDistances().size());
+        std::vector<transport_catalogue_proto::Stop> stops_proto_vector;
+        stops_proto_vector.reserve(transport_catalogue.GetAllStopsFromCatalogue().size());
 
-        std::unordered_map<std::string, transport_catalogue_proto::Stop*> stop_indexes(transport_catalogue.GetAllStopsFromCatalogue().size());
+        std::unordered_map<std::string, transport_catalogue_proto::Stop*> stop_indexes;
 
         int curr_id = 0;
 
@@ -75,6 +75,30 @@ namespace serialization {
         transport_catalogue_proto.SerializeToOstream(&out_file);
     }
     void DeserializeTransportCatalogue(transport_catalogue::TransportCatalogue& transport_catalogue, json_reader::JsonReader& json_reader) {
-        (void)transport_catalogue;
+        std::string file_name = json_reader.GetSerializationSettingsRequests().at("file"s).AsString();
+        std::ifstream in_file(file_name, std::ios::binary);
+        transport_catalogue_proto::TransportCatalogue transport_catalogue_proto;
+        if(transport_catalogue_proto.ParseFromIstream(&in_file)) {
+            for(const auto& stop_proto : transport_catalogue_proto.stops()) {
+                transport_catalogue.AddStop(stop_proto.name(), {stop_proto.coordinates().lng(), stop_proto.coordinates().lat()});
+            }
+
+            for(const auto& bus_proto : transport_catalogue_proto.buses()) {
+                std::vector<std::string> stops;
+                stops.reserve(bus_proto.stop_ids().size());
+                for(const uint32_t stop_id : bus_proto.stop_ids()) {
+                    std::string stop_name = transport_catalogue_proto.stops().at(stop_id).name();
+                    stops.push_back(stop_name);
+                }
+                transport_catalogue.AddBus(bus_proto.name(), stops, bus_proto.is_circle());
+            }
+
+            for(const auto& stop_to_stop_distance_proto : transport_catalogue_proto.stop_to_stop_distances()) {
+                std::string from_stop_name = transport_catalogue_proto.stops().at(stop_to_stop_distance_proto.from_stop_id()).name();
+                std::string to_stop_name = transport_catalogue_proto.stops().at(stop_to_stop_distance_proto.to_stop_id()).name();
+
+                transport_catalogue.SetStopToStopDistances(from_stop_name, to_stop_name, stop_to_stop_distance_proto.distance());
+            }
+        }
     }
 } // namespace serialization

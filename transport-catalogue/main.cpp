@@ -43,16 +43,17 @@ int main(int argc, char* argv[]) {
 
     const std::string_view mode(argv[1]);
 
+    transport_catalogue::TransportCatalogue transport_catalogue;
     if (mode == "make_base"sv) {
         // make base here
-        transport_catalogue::TransportCatalogue transport_catalogue;
+
         json_reader::FillingTransportCatalogue(transport_catalogue, json_reader);
         serialization::SerializeTransportCatalogue(transport_catalogue, json_reader);
 
 
     } else if (mode == "process_requests"sv) {
-
         // process requests here
+        serialization::DeserializeTransportCatalogue(transport_catalogue, json_reader);
 
     } else {
         PrintUsage();
