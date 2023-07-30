@@ -57,7 +57,7 @@ namespace json_reader {
         transport_catalogue::TransportCatalogue& transport_catalogue, 
         router::TransportRouter& router, 
         renderer::MapRenderer& map_render, 
-        std::istream& input, 
+        json_reader::JsonReader& json_reader,
         std::ostream& output, 
         request_handler::RequestHandler& request_handler
     );

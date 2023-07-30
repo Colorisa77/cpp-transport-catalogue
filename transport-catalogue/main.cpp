@@ -4,7 +4,7 @@
 #include "transport_router.h"
 #include "serialization.h"
 
-/*void QueryProcessing(transport_catalogue::TransportCatalogue& transport_catalogue, std::istream& input, std::ostream& output) {
+void QueryProcessing(transport_catalogue::TransportCatalogue& transport_catalogue, json_reader::JsonReader& json_reader, std::ostream& output) {
     router::TransportRouter router;
     renderer::MapRenderer map_render;
     request_handler::RequestHandler request_handler(transport_catalogue, router, map_render);
@@ -12,12 +12,12 @@
         transport_catalogue, 
         router, 
         map_render, 
-        input, 
+        json_reader,
         output, 
         request_handler
     );
 }
-
+/*
 int main() {
     transport_catalogue::TransportCatalogue transport_catalogue;
     QueryProcessing(transport_catalogue, std::cin, std::cout);
@@ -54,6 +54,7 @@ int main(int argc, char* argv[]) {
     } else if (mode == "process_requests"sv) {
         // process requests here
         serialization::DeserializeTransportCatalogue(transport_catalogue, json_reader);
+        QueryProcessing(transport_catalogue, json_reader, std::cout);
 
     } else {
         PrintUsage();

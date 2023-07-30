@@ -38,6 +38,7 @@ namespace transport_catalogue {
 		bool IsStopExist(std::string) const;
 		
 		void SetStopToStopDistances(const std::string stop_name, const std::string other_stop_name, double distance);
+        void ChangeLastRouteRoundTrip();
 
 
 	private:

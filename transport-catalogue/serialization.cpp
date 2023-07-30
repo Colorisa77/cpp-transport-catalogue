@@ -17,8 +17,9 @@ namespace serialization {
         stops_proto_vector.reserve(transport_catalogue.GetAllStopsFromCatalogue().size());
 
         std::unordered_map<std::string, transport_catalogue_proto::Stop*> stop_indexes;
+        stop_indexes.reserve(transport_catalogue.GetAllStopsFromCatalogue().size());
 
-        int curr_id = 0;
+        int curr_id = 1;
 
         for(const std::string_view stop_name : transport_catalogue.GetAllStopsFromCatalogue()) {
             const auto& stop = transport_catalogue.GetStopByName(stop_name);
@@ -39,11 +40,11 @@ namespace serialization {
             ++curr_id;
         }
 
-        curr_id = 0;
+        curr_id = 1;
 
         for(const std::string_view bus_name : transport_catalogue.GetAllBusesFromCatalogue()) {
             std::string b_name = std::string(bus_name);
-            const auto& bus = transport_catalogue.GetBusByName(std::string(b_name));
+            const auto bus = transport_catalogue.GetBusByName(std::string(b_name));
 
             transport_catalogue_proto::Bus bus_proto;
             bus_proto.set_id(curr_id);
@@ -78,24 +79,32 @@ namespace serialization {
         std::string file_name = json_reader.GetSerializationSettingsRequests().at("file"s).AsString();
         std::ifstream in_file(file_name, std::ios::binary);
         transport_catalogue_proto::TransportCatalogue transport_catalogue_proto;
+
+        std::unordered_map<uint32_t, std::string> stop_indexes;
+        stop_indexes.reserve(transport_catalogue_proto.stops_size());
+
         if(transport_catalogue_proto.ParseFromIstream(&in_file)) {
-            for(const auto& stop_proto : transport_catalogue_proto.stops()) {
-                transport_catalogue.AddStop(stop_proto.name(), {stop_proto.coordinates().lng(), stop_proto.coordinates().lat()});
+            for(auto& stop_proto : transport_catalogue_proto.stops()) {
+                stop_indexes[stop_proto.id()] = stop_proto.name();
+                transport_catalogue.AddStop(stop_proto.name(), {stop_proto.coordinates().lat(), stop_proto.coordinates().lng()});
             }
 
-            for(const auto& bus_proto : transport_catalogue_proto.buses()) {
+            for(auto& bus_proto : transport_catalogue_proto.buses()) {
                 std::vector<std::string> stops;
                 stops.reserve(bus_proto.stop_ids().size());
-                for(const uint32_t stop_id : bus_proto.stop_ids()) {
-                    std::string stop_name = transport_catalogue_proto.stops().at(stop_id).name();
+                for(uint32_t stop_id : bus_proto.stop_ids()) {
+                    std::string stop_name = stop_indexes.at(stop_id);
                     stops.push_back(stop_name);
                 }
-                transport_catalogue.AddBus(bus_proto.name(), stops, bus_proto.is_circle());
+                transport_catalogue.AddBus(bus_proto.name(), stops, true);
+                if(!bus_proto.is_circle()) {
+                    transport_catalogue.ChangeLastRouteRoundTrip();
+                }
             }
 
             for(const auto& stop_to_stop_distance_proto : transport_catalogue_proto.stop_to_stop_distances()) {
-                std::string from_stop_name = transport_catalogue_proto.stops().at(stop_to_stop_distance_proto.from_stop_id()).name();
-                std::string to_stop_name = transport_catalogue_proto.stops().at(stop_to_stop_distance_proto.to_stop_id()).name();
+                std::string from_stop_name = stop_indexes.at(stop_to_stop_distance_proto.from_stop_id());
+                std::string to_stop_name = stop_indexes.at(stop_to_stop_distance_proto.to_stop_id());
 
                 transport_catalogue.SetStopToStopDistances(from_stop_name, to_stop_name, stop_to_stop_distance_proto.distance());
             }

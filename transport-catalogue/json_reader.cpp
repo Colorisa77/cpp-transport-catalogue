@@ -252,16 +252,17 @@ namespace json_reader {
         transport_catalogue::TransportCatalogue& transport_catalogue, 
         router::TransportRouter& router, 
         renderer::MapRenderer& map_render, 
-        std::istream& input, 
+        JsonReader& json_reader,
         std::ostream& output, 
         request_handler::RequestHandler& request_handler) {
-            
-        JsonReader json_reader(input);
-        FillingTransportCatalogue(transport_catalogue, json_reader);
 
         //до этого момента нужно заполнять транспортный каталог.
 
-        router.FillTransportRouter(
+        (void)transport_catalogue;
+        (void)router;
+        (void)map_render;
+
+        /*router.FillTransportRouter(
             transport_catalogue, 
             json_reader.GetRouteSettings().at("bus_velocity"s).AsDouble(), 
             json_reader.GetRouteSettings().at("bus_wait_time"s).AsInt()
@@ -302,9 +303,10 @@ namespace json_reader {
                 map_render.ChangeCurrentColor();
             }
         }
-
+        */
         std::ostringstream svg_output;
-        request_handler.RenderMap(svg_output);
+        //request_handler.RenderMap(svg_output);
+
         json::Array result;
         json::Builder responses;
         responses.StartArray();

@@ -26,6 +26,10 @@ namespace transport_catalogue {
 		}
 	}
 
+    void TransportCatalogue::ChangeLastRouteRoundTrip() {
+        buses_.back().is_circle = !buses_.back().is_circle;
+    }
+
 	void TransportCatalogue::AddBus(std::string bus_name, std::vector<std::string>& vect_stops, bool is_circle) {
 		if (buses_index_.count(bus_name) == 0) {
 			std::vector<std::string> new_stops;
