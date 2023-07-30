@@ -40,15 +40,18 @@ int main(int argc, char* argv[]) {
     }
 
     json_reader::JsonReader json_reader(std::cin);
+    transport_catalogue_proto::Catalogue catalogue;
 
     const std::string_view mode(argv[1]);
 
     transport_catalogue::TransportCatalogue transport_catalogue;
+    renderer::RenderSettings render_settings;
     if (mode == "make_base"sv) {
         // make base here
 
         json_reader::FillingTransportCatalogue(transport_catalogue, json_reader);
-        serialization::SerializeTransportCatalogue(transport_catalogue, json_reader);
+        serialization::SerializeTransportCatalogue(catalogue, transport_catalogue, json_reader);
+        serialization::SerializeRenderSettings(catalogue, render_settings, json_reader);
 
 
     } else if (mode == "process_requests"sv) {

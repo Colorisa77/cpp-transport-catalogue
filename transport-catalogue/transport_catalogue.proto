@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package transport_catalogue_proto;
 
+import "map_render.proto";
+
 message Coordinates {
     double lat = 1;
     double lng = 2;
@@ -30,4 +32,9 @@ message TransportCatalogue {
     repeated Stop stops = 1;
     repeated Bus buses = 2;
     repeated StopToStopDistance stop_to_stop_distances = 3;
+}
+
+message Catalogue {
+    TransportCatalogue transport_catalogue = 1;
+    RenderSettings map_renderer = 2;
 }

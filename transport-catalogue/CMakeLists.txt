@@ -7,10 +7,10 @@ set(CMAKE_CXX_FLAGS "-Wall -Wextra -Werror -O2")
 find_package(Protobuf REQUIRED)
 find_package(Threads REQUIRED)
 
-protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS transport_catalogue.proto)
+protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS transport_catalogue.proto svg.proto map_render.proto)
 
 set(UTILITY geo.h geo.cpp ranges.h)
-set(TRANSPORT_CATALOGUE transport_catalogue.h transport_catalogue.cpp domain.h domain.cpp serialization.cpp serialization.h transport_catalogue.proto)
+set(TRANSPORT_CATALOGUE transport_catalogue.h transport_catalogue.cpp domain.h domain.cpp serialization.cpp serialization.h transport_catalogue.proto svg.proto map_render.proto)
 set(ROUTER graph.h transport_router.h transport_router.cpp)
 set(JSON json.cpp json.h json_builder.h json_builder.cpp json_reader.h json_reader.cpp)
 set(SVG svg.h svg.cpp)

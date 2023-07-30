@@ -13,6 +13,21 @@
 
 namespace renderer {
 
+    struct RenderSettings {
+        double width;
+        double height;
+        double padding;
+        double line_width;
+        double stop_radius;
+        uint32_t bus_label_font_size;
+        svg::Point bus_label_offset;
+        uint32_t stop_label_font_size;
+        svg::Point stop_label_offset;
+        svg::Color underlayer_color;
+        double underlayer_width;
+        std::vector<svg::Color> color_palette;
+    };
+
     struct MapVisualizationSettings {
         double max_width;
         double max_height;
