@@ -31,6 +31,7 @@ namespace transport_catalogue {
 
 		double GetStopToStopDistance(const Stop* from, const Stop* to) const;
 		double GetStopToStopDistanceByName(const std::string_view from, const std::string_view to) const;
+        const std::unordered_map<std::pair<const Stop*, const Stop*>, double, StopPairHash>& GetAllDistances() const;
 		
 		std::vector<const Stop*> GetStopsByBusName(std::string name) const;
 		

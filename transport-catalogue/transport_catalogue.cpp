@@ -136,6 +136,10 @@ namespace transport_catalogue {
 		return GetStopToStopDistance(stop_index_.at(from), stop_index_.at(to));
 	}
 
+    const std::unordered_map<std::pair<const Stop*, const Stop*>, double, StopPairHash>& TransportCatalogue::GetAllDistances() const {
+        return stop_to_stop_distances_;
+    }
+
 	bool TransportCatalogue::IsStopExist(std::string name) const {
 		if (stop_index_.count(name) > 0) {
 			return true;

@@ -16,7 +16,7 @@ message Stop {
 message Bus {
     uint32 id = 1;
     string name = 2;
-    repeated Stop stops = 3;
+    repeated uint32 stop_ids = 3;
     bool is_circle = 4;
 }
 
