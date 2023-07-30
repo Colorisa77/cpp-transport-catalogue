@@ -16,7 +16,7 @@ set(JSON json.cpp json.h json_builder.h json_builder.cpp json_reader.h json_read
 set(SVG svg.h svg.cpp)
 set(MAP_RENDER map_renderer.h map_renderer.cpp)
 set(REQUEST_HANDLER request_handler.h request_handler.cpp)
-add_executable(18_transport_catalogue_proto transport_catalogue main.cpp ${PROTO_SRCS} ${PROTO_HDRS} ${UTILITY} ${TRANSPORT_CATALOGUE} ${ROUTER} ${JSON} ${SVG} ${MAP_RENDER} ${REQUEST_HANDLER})
+add_executable(18_transport_catalogue_proto main.cpp ${PROTO_SRCS} ${PROTO_HDRS} ${UTILITY} ${TRANSPORT_CATALOGUE} ${ROUTER} ${JSON} ${SVG} ${MAP_RENDER} ${REQUEST_HANDLER})
 
 target_include_directories(18_transport_catalogue_proto PUBLIC ${Protobuf_INCLUDE_DIRS})
 target_include_directories(18_transport_catalogue_proto PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
