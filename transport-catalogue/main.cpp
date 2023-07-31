@@ -4,6 +4,10 @@
 #include "transport_router.h"
 #include "serialization.h"
 
+#include <fstream>
+#include <iostream>
+#include <string_view>
+
 void QueryProcessing(transport_catalogue::TransportCatalogue& transport_catalogue, renderer::RenderSettings& render_settings, json_reader::JsonReader& json_reader, std::ostream& output) {
     router::TransportRouter router;
     renderer::MapRenderer map_render;
@@ -18,15 +22,6 @@ void QueryProcessing(transport_catalogue::TransportCatalogue& transport_catalogu
         request_handler
     );
 }
-/*
-int main() {
-    transport_catalogue::TransportCatalogue transport_catalogue;
-    QueryProcessing(transport_catalogue, std::cin, std::cout);
-}*/
-
-#include <fstream>
-#include <iostream>
-#include <string_view>
 
 using namespace std::literals;
 
