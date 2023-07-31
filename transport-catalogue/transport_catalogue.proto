@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package transport_catalogue_proto;
 
-import "map_render.proto";
+import "map_renderer.proto";
 
 message Coordinates {
     double lat = 1;
