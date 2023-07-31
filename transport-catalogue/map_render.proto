@@ -4,6 +4,11 @@ import "svg.proto";
 
 package transport_catalogue_proto;
 
+message ColorPalette {
+    uint32 id = 1;
+    Color color = 2;
+}
+
 message RenderSettings {
     double width = 1;
     double height = 2;
@@ -16,5 +21,5 @@ message RenderSettings {
     Point stop_label_offset = 9;
     Color underlayer_color = 10;
     double underlayer_width = 11;
-    repeated Color color_palette = 12;
+    repeated ColorPalette color_palette = 12;
 }

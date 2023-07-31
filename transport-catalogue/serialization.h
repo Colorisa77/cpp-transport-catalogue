@@ -19,8 +19,9 @@ namespace serialization {
     void SerializeCatalogue(const transport_catalogue_proto::Catalogue& catalogue, json_reader::JsonReader& json_reader);
     void DeserializeCatalogue(transport_catalogue_proto::Catalogue& catalogue_proto, json_reader::JsonReader& json_reader);
 
-    svg::Color DeserializeColor(transport_catalogue_proto::Color& color_proto, json_reader::JsonReader& json_reader);
-    void DeserializeTransportCatalogue(transport_catalogue::TransportCatalogue& transport_catalogue, transport_catalogue_proto::Catalogue& catalogue_proto, json_reader::JsonReader& json_reader);
-    void DeserializeRenderSettings(renderer::RenderSettings& render_settings, transport_catalogue_proto::Catalogue& catalogue_proto, json_reader::JsonReader& json_reader);
+    svg::Color DeserializeUnderlayerColor(const transport_catalogue_proto::Color& catalogue_proto);
+    svg::Color DeserializeColorPalette(const transport_catalogue_proto::Color& catalogue_proto);
+    void DeserializeTransportCatalogue(transport_catalogue::TransportCatalogue& transport_catalogue, transport_catalogue_proto::Catalogue& catalogue_proto);
+    void DeserializeRenderSettings(renderer::RenderSettings& render_settings, transport_catalogue_proto::Catalogue& catalogue_proto);
 
 } // namespace serialization

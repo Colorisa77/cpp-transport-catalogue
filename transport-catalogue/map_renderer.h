@@ -102,12 +102,12 @@ namespace renderer {
 
     class MapRenderer {
     public:
-        void AddNewPointByRouteName(const std::string& route_name, const svg::Point& point, const json::Node& render_attachments);
-        void AddNewTextForRoute(const std::string& route_name, const svg::Point& point, const json::Node& render_attachments);
-        void AddNewCircleForStop(const std::string_view stop_name, const svg::Point& point, const json::Node& render_attachments);
-        void AddNewTextForStop(const std::string_view stop_name, const svg::Point& point, const json::Node& render_attachments);
+        void AddNewPointByRouteName(const std::string& route_name, const svg::Point& point, const RenderSettings& render_settings);
+        void AddNewTextForRoute(const std::string& route_name, const svg::Point& point, const RenderSettings& render_settings);
+        void AddNewCircleForStop(const std::string_view stop_name, const svg::Point& point, const RenderSettings& render_settings);
+        void AddNewTextForStop(const std::string_view stop_name, const svg::Point& point, const RenderSettings& render_settings);
 
-        svg::Text SetNewSubstrateForText(const svg::Point& point, const json::Node& render_attachments);
+        svg::Text SetNewSubstrateForText(const svg::Point& point, const RenderSettings& render_settings);
 
         void Render(std::ostream& output) const;
 

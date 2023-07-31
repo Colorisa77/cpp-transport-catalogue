@@ -61,9 +61,10 @@ int main(int argc, char* argv[]) {
         transport_catalogue_proto::Catalogue catalogue_proto;
 
         serialization::DeserializeCatalogue(catalogue_proto, json_reader);
-        serialization::DeserializeTransportCatalogue(transport_catalogue, catalogue_proto, json_reader);
-        serialization::DeserializeRenderSettings(render_settings, catalogue_proto, json_reader);
-        QueryProcessing(transport_catalogue, render_settings, json_reader, std::cout);
+        serialization::DeserializeTransportCatalogue(transport_catalogue, catalogue_proto);
+        serialization::DeserializeRenderSettings(render_settings, catalogue_proto);
+        std::ofstream output("output.json");
+        QueryProcessing(transport_catalogue, render_settings, json_reader, output);
 
     } else {
         PrintUsage();

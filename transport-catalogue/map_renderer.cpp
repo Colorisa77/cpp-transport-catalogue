@@ -19,9 +19,9 @@ namespace renderer {
         };
     }
 
-    void MapRenderer::AddNewPointByRouteName(const std::string& route_name, const svg::Point& point, const json::Node& render_attachments) {
+    void MapRenderer::AddNewPointByRouteName(const std::string& route_name, const svg::Point& point, const RenderSettings& render_settings) {
         using namespace std::literals;
-        double line_width = render_attachments.AsDict().at("line_width"s).AsDouble();
+        double line_width = render_settings.line_width;
         svg::Color color = GetCurrentColor();
         if(routes_polyline_.count(route_name) > 0) {
             routes_polyline_.at(route_name)
@@ -43,19 +43,16 @@ namespace renderer {
             .SetStrokeLineJoin(svg::StrokeLineJoin::ROUND);
     }
 
-    void MapRenderer::AddNewTextForRoute(const std::string& route_name, const svg::Point& point, const json::Node& render_attachments) {
+    void MapRenderer::AddNewTextForRoute(const std::string& route_name, const svg::Point& point, const RenderSettings& render_settings) {
         using namespace std::literals;
         svg::Text text;
-        svg::Point offset = {
-            render_attachments.AsDict().at("bus_label_offset"s).AsArray().at(0).AsDouble(),
-            render_attachments.AsDict().at("bus_label_offset"s).AsArray().at(1).AsDouble()
-        };
-        uint32_t font_size = static_cast<uint32_t>(render_attachments.AsDict().at("bus_label_font_size"s).AsInt());
+        svg::Point offset = render_settings.bus_label_offset;
+        uint32_t font_size = static_cast<uint32_t>(render_settings.bus_label_font_size);
         std::string font_family = "Verdana"s;
         std::string font_weight = "bold"s;
         svg::Color color = GetCurrentColor();
 
-        svg::Text text_substrate = SetNewSubstrateForText(point, render_attachments);
+        svg::Text text_substrate = SetNewSubstrateForText(point, render_settings);
         text_substrate.SetData(bus_stops_names_.back());
         routes_texts_[bus_stops_names_.back()].push_back(text_substrate);
 
@@ -69,16 +66,13 @@ namespace renderer {
         routes_texts_[bus_stops_names_.back()].push_back(text);
     }
 
-    svg::Text MapRenderer::SetNewSubstrateForText(const svg::Point& point, const json::Node& render_attachments) {
+    svg::Text MapRenderer::SetNewSubstrateForText(const svg::Point& point, const RenderSettings& render_settings) {
         using namespace std::literals;
         svg::Text text_substrate;
-        svg::Color fill_and_stoke_color = GetColorFromUnderlayerColorNode(render_attachments);
-        double stroke_width = render_attachments.AsDict().at("underlayer_width"s).AsDouble();
-        svg::Point offset = {
-            render_attachments.AsDict().at("bus_label_offset"s).AsArray().at(0).AsDouble(),
-            render_attachments.AsDict().at("bus_label_offset"s).AsArray().at(1).AsDouble()
-        };
-        uint32_t font_size = static_cast<uint32_t>(render_attachments.AsDict().at("bus_label_font_size"s).AsInt());
+        svg::Color fill_and_stoke_color = render_settings.underlayer_color;
+        double stroke_width = render_settings.underlayer_width;
+        svg::Point offset = render_settings.bus_label_offset;
+        uint32_t font_size = static_cast<uint32_t>(render_settings.bus_label_font_size);
         svg::StrokeLineCap line_cap = svg::StrokeLineCap::ROUND;
         svg::StrokeLineJoin line_join = svg::StrokeLineJoin::ROUND;
         std::string font_family = "Verdana"s;
@@ -95,33 +89,30 @@ namespace renderer {
         return text_substrate;
     }
 
-    void MapRenderer::AddNewCircleForStop(const std::string_view stop_name, const svg::Point& point, const json::Node& render_attachments) {
+    void MapRenderer::AddNewCircleForStop(const std::string_view stop_name, const svg::Point& point, const RenderSettings& render_settings) {
         if(stops_circles_.count(stop_name) > 0) {
             return;
-        } 
+        }
         using namespace std::literals;
         svg::Circle circle;
-        double radius = render_attachments.AsDict().at("stop_radius"s).AsDouble();
+        double radius =render_settings.stop_radius;
         svg::Color color("white"s);
         circle.SetCenter(point).SetRadius(radius).SetFillColor(color);
         stops_circles_[stop_name].push_back(circle);
     }
 
-    void MapRenderer::AddNewTextForStop(const std::string_view stop_name, const svg::Point& point, const json::Node& render_attachments) {
+    void MapRenderer::AddNewTextForStop(const std::string_view stop_name, const svg::Point& point, const RenderSettings& render_settings) {
         if(stops_texts_.count(stop_name) > 0) {
             return;
         }
         using namespace std::literals;
         svg::Text text;
         svg::Color fill("black"s);
-        svg::Point offset = {
-            render_attachments.AsDict().at("stop_label_offset"s).AsArray().at(0).AsDouble(),
-            render_attachments.AsDict().at("stop_label_offset"s).AsArray().at(1).AsDouble()
-        };
-        uint32_t font_size = static_cast<uint32_t>(render_attachments.AsDict().at("stop_label_font_size"s).AsInt());
+        svg::Point offset = render_settings.stop_label_offset;
+        uint32_t font_size = static_cast<uint32_t>(render_settings.stop_label_font_size);
         std::string font_family = "Verdana"s;
         std::string stop = {stop_name.data(), stop_name.size()};
-        svg::Text text_substrate = SetNewSubstrateForText(point, render_attachments);
+        svg::Text text_substrate = SetNewSubstrateForText(point, render_settings);
         text_substrate.SetOffset(offset)
             .SetFontSize(font_size)
             .SetFontWeight("")

@@ -121,12 +121,18 @@ namespace serialization {
         transport_catalogue_proto::Color color_proto;
         svg::Color clr(render_settings.underlayer_color);
         serialization::SerializeColor(clr, color_proto);
+        render_settings_proto.mutable_underlayer_color()->Swap(&color_proto);
 
         render_settings_proto.set_underlayer_width(render_settings.underlayer_width);
 
+        int i = 0;
         for(svg::Color color : render_settings.color_palette) {
             serialization::SerializeColor(color, color_proto);
-            render_settings_proto.add_color_palette()->Swap(&color_proto);
+            transport_catalogue_proto::ColorPalette color_palette_proto;
+            color_palette_proto.set_id(i);
+            color_palette_proto.mutable_color()->Swap(&color_proto);
+            render_settings_proto.add_color_palette()->Swap(&color_palette_proto);
+            ++i;
         }
         catalogue.mutable_render_settings()->Swap(&render_settings_proto);
     }
@@ -144,105 +150,119 @@ namespace serialization {
         catalogue_proto.ParseFromIstream(&in_file);
     }
 
-    svg::Color DeserializeColor(transport_catalogue_proto::Color& color_proto, json_reader::JsonReader& json_reader) {
-        std::string file_name = json_reader.GetSerializationSettingsRequests().at("file"s).AsString();
-        std::ifstream in_file(file_name, std::ios::binary);
-
-        if(color_proto.ParseFromIstream(&in_file)) {
-            if(color_proto.has_rgb()) {
-                svg::Rgb rgb;
-                const transport_catalogue_proto::Rgb& rgb_proto = color_proto.rgb();
-                rgb.red = rgb_proto.red();
-                rgb.green = rgb_proto.green();
-                rgb.blue = rgb_proto.blue();
-                return {svg::Rgb(rgb)};
-
-            } else if(color_proto.has_rgba()) {
-                svg::Rgba rgba;
-                const transport_catalogue_proto::Rgba& rgba_proto = color_proto.rgba();
-                rgba.red = rgba_proto.red();
-                rgba.green = rgba_proto.green();
-                rgba.blue = rgba_proto.blue();
-                rgba.opacity = rgba_proto.opacity();
-                return {svg::Rgba(rgba)};
-            } else {
-                return {svg::Color(color_proto.color_string())};
-            }
+    svg::Color DeserializeUnderlayerColor(const transport_catalogue_proto::Color& underlayer_color_proto) {
+        if(underlayer_color_proto.has_rgb()) {
+            svg::Rgb rgb;
+            const transport_catalogue_proto::Rgb& rgb_proto = underlayer_color_proto.rgb();
+            rgb.red = rgb_proto.red();
+            rgb.green = rgb_proto.green();
+            rgb.blue = rgb_proto.blue();
+            return {svg::Rgb(rgb)};
+        } else if(underlayer_color_proto.has_rgba()) {
+            svg::Rgba rgba;
+            const transport_catalogue_proto::Rgba& rgba_proto = underlayer_color_proto.rgba();
+            rgba.red = rgba_proto.red();
+            rgba.green = rgba_proto.green();
+            rgba.blue = rgba_proto.blue();
+            rgba.opacity = rgba_proto.opacity();
+            return {svg::Rgba(rgba)};
+        } else {
+            return {svg::Color(underlayer_color_proto.color_string())};
         }
-        return svg::Color{};
     }
 
-    void DeserializeTransportCatalogue(transport_catalogue::TransportCatalogue& transport_catalogue, transport_catalogue_proto::Catalogue& catalogue_proto, json_reader::JsonReader& json_reader) {
-        std::string file_name = json_reader.GetSerializationSettingsRequests().at("file"s).AsString();
-        std::ifstream in_file(file_name, std::ios::binary);
+    svg::Color DeserializeColorPalette(const transport_catalogue_proto::Color& color_palette_proto) {
+        if(color_palette_proto.has_rgb()) {
+            svg::Rgb rgb;
+            const transport_catalogue_proto::Rgb& rgb_proto = color_palette_proto.rgb();
+            rgb.red = rgb_proto.red();
+            rgb.green = rgb_proto.green();
+            rgb.blue = rgb_proto.blue();
+            return {svg::Rgb(rgb)};
 
+        } else if(color_palette_proto.has_rgba()) {
+            svg::Rgba rgba;
+            const transport_catalogue_proto::Rgba& rgba_proto = color_palette_proto.rgba();
+            rgba.red = rgba_proto.red();
+            rgba.green = rgba_proto.green();
+            rgba.blue = rgba_proto.blue();
+            rgba.opacity = rgba_proto.opacity();
+            return {svg::Rgba(rgba)};
+
+        } else {
+            return {svg::Color(color_palette_proto.color_string())};
+        }
+    }
+
+    void DeserializeTransportCatalogue(transport_catalogue::TransportCatalogue& transport_catalogue, transport_catalogue_proto::Catalogue& catalogue_proto) {
         std::unordered_map<uint32_t, std::string> stop_indexes;
         stop_indexes.reserve(catalogue_proto.transport_catalogue().stops_size());
 
-        if(catalogue_proto.ParseFromIstream(&in_file)) {
-            for(auto& stop_proto : catalogue_proto.transport_catalogue().stops()) {
-                stop_indexes[stop_proto.id()] = stop_proto.name();
-                transport_catalogue.AddStop(stop_proto.name(), {stop_proto.coordinates().lat(), stop_proto.coordinates().lng()});
-            }
+        for(auto& stop_proto : catalogue_proto.transport_catalogue().stops()) {
+            stop_indexes[stop_proto.id()] = stop_proto.name();
+            transport_catalogue.AddStop(stop_proto.name(), {stop_proto.coordinates().lat(), stop_proto.coordinates().lng()});
+        }
 
-            for(auto& bus_proto : catalogue_proto.transport_catalogue().buses()) {
-                std::vector<std::string> stops;
-                stops.reserve(bus_proto.stop_ids().size());
-                for(uint32_t stop_id : bus_proto.stop_ids()) {
-                    std::string stop_name = stop_indexes.at(stop_id);
-                    stops.push_back(stop_name);
-                }
-                transport_catalogue.AddBus(bus_proto.name(), stops, true);
-                if(!bus_proto.is_circle()) {
-                    transport_catalogue.ChangeLastRouteRoundTrip();
-                }
+        for(auto& bus_proto : catalogue_proto.transport_catalogue().buses()) {
+            std::vector<std::string> stops;
+            stops.reserve(bus_proto.stop_ids().size());
+            for(uint32_t stop_id : bus_proto.stop_ids()) {
+                std::string stop_name = stop_indexes.at(stop_id);
+                stops.push_back(stop_name);
             }
-
-            for(const auto& stop_to_stop_distance_proto : catalogue_proto.transport_catalogue().stop_to_stop_distances()) {
-                std::string from_stop_name = stop_indexes.at(stop_to_stop_distance_proto.from_stop_id());
-                std::string to_stop_name = stop_indexes.at(stop_to_stop_distance_proto.to_stop_id());
-
-                transport_catalogue.SetStopToStopDistances(from_stop_name, to_stop_name, stop_to_stop_distance_proto.distance());
+            transport_catalogue.AddBus(bus_proto.name(), stops, true);
+            if(!bus_proto.is_circle()) {
+                transport_catalogue.ChangeLastRouteRoundTrip();
             }
+        }
+
+        for(const auto& stop_to_stop_distance_proto : catalogue_proto.transport_catalogue().stop_to_stop_distances()) {
+            std::string from_stop_name = stop_indexes.at(stop_to_stop_distance_proto.from_stop_id());
+            std::string to_stop_name = stop_indexes.at(stop_to_stop_distance_proto.to_stop_id());
+
+            transport_catalogue.SetStopToStopDistances(from_stop_name, to_stop_name, stop_to_stop_distance_proto.distance());
         }
     }
 
-    void DeserializeRenderSettings(renderer::RenderSettings& render_settings, transport_catalogue_proto::Catalogue& catalogue_proto, json_reader::JsonReader& json_reader) {
-        std::string file_name = json_reader.GetSerializationSettingsRequests().at("file"s).AsString();
-        std::ifstream in_file(file_name, std::ios::binary);
+    void DeserializeRenderSettings(renderer::RenderSettings& render_settings, transport_catalogue_proto::Catalogue& catalogue_proto) {
+        render_settings.width = catalogue_proto.render_settings().width();
+        render_settings.height = catalogue_proto.render_settings().height();
+        render_settings.padding = catalogue_proto.render_settings().padding();
+        render_settings.line_width = catalogue_proto.render_settings().line_width();
+        render_settings.stop_radius = catalogue_proto.render_settings().stop_radius();
+        render_settings.bus_label_font_size = catalogue_proto.render_settings().bus_label_font_size();
 
-        if(catalogue_proto.ParseFromIstream(&in_file)) {
-            render_settings.width = catalogue_proto.render_settings().width();
-            render_settings.height = catalogue_proto.render_settings().height();
-            render_settings.padding = catalogue_proto.render_settings().padding();
-            render_settings.line_width = catalogue_proto.render_settings().line_width();
-            render_settings.stop_radius = catalogue_proto.render_settings().stop_radius();
-            render_settings.bus_label_font_size = catalogue_proto.render_settings().bus_label_font_size();
+        const transport_catalogue_proto::Point& bus_label_offset_proto = catalogue_proto.render_settings().bus_label_offset();
+        render_settings.bus_label_offset.x = bus_label_offset_proto.x();
+        render_settings.bus_label_offset.y = bus_label_offset_proto.y();
 
-            const transport_catalogue_proto::Point& bus_label_offset_proto = catalogue_proto.render_settings().bus_label_offset();
-            render_settings.bus_label_offset.x = bus_label_offset_proto.x();
-            render_settings.bus_label_offset.y = bus_label_offset_proto.y();
+        render_settings.stop_label_font_size = catalogue_proto.render_settings().stop_label_font_size();
 
-            render_settings.stop_label_font_size = catalogue_proto.render_settings().stop_label_font_size();
+        const transport_catalogue_proto::Point& stop_label_offset_proto = catalogue_proto.render_settings().stop_label_offset();
+        render_settings.stop_label_offset.x = stop_label_offset_proto.x();
+        render_settings.stop_label_offset.y = stop_label_offset_proto.y();
 
-            const transport_catalogue_proto::Point& stop_label_offset_proto = catalogue_proto.render_settings().stop_label_offset();
-            render_settings.stop_label_offset.x = stop_label_offset_proto.x();
-            render_settings.stop_label_offset.y = stop_label_offset_proto.y();
+        transport_catalogue_proto::Color underlayer_color_proto = catalogue_proto.render_settings().underlayer_color();
+        render_settings.underlayer_color = DeserializeUnderlayerColor(underlayer_color_proto);
 
-            transport_catalogue_proto::Color underlayer_color_proto = catalogue_proto.render_settings().underlayer_color();
-            render_settings.underlayer_color = DeserializeColor(underlayer_color_proto, json_reader);
+        render_settings.underlayer_width = catalogue_proto.render_settings().underlayer_width();
 
-            render_settings.underlayer_width = catalogue_proto.render_settings().underlayer_width();
+        std::vector<svg::Color> color_palette;
+        color_palette.reserve(catalogue_proto.render_settings().color_palette().size());
 
-            std::vector<svg::Color> color_palette;
-            color_palette.reserve(catalogue_proto.render_settings().color_palette().size());
-            for (transport_catalogue_proto::Color color_proto : catalogue_proto.render_settings().color_palette()) {
-                svg::Color color;
-                color = DeserializeColor(color_proto, json_reader);
-                color_palette.push_back(color);
-            }
-            render_settings.color_palette = std::move(color_palette);
+        std::unordered_map<uint32_t, transport_catalogue_proto::Color> color_palette_proto_indexes;
+        color_palette_proto_indexes.reserve(catalogue_proto.render_settings().color_palette().size());
+
+        for(const auto& color_proto : catalogue_proto.render_settings().color_palette()) {
+            color_palette_proto_indexes[color_proto.id()] = color_proto.color();
         }
+
+        for (uint32_t i = 0; i < color_palette_proto_indexes.size(); ++i) {
+            svg::Color color = DeserializeColorPalette(color_palette_proto_indexes.at(i));
+            color_palette.push_back(color);
+        }
+        render_settings.color_palette = std::move(color_palette);
+
     }
 
 } // namespace serialization

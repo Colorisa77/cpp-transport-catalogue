@@ -19,8 +19,12 @@ namespace request_handler {
         return router_.GetRouteInfo(from, to);
     }
 
-    const transport_catalogue::Bus* RequestHandler::GetBus(const std::string bus_name) const { 
-        return db_.GetBusByName(bus_name); 
+    std::vector<std::string_view> RequestHandler::GetAllBusesFromCatalogue() const {
+        return db_.GetAllBusesFromCatalogue();
+    }
+
+    const transport_catalogue::Bus* RequestHandler::GetBus(const std::string_view bus_name) const {
+        return db_.GetBusByName(std::string(bus_name));
     } 
 
     transport_catalogue::Stop RequestHandler::GetStop(const std::string_view stop_name) const { 

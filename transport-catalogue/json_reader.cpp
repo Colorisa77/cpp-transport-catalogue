@@ -310,29 +310,33 @@ namespace json_reader {
         );
         map_render.SetPossibleColors(render_settings.color_palette);
 
-        for(const auto& bus_name : json_reader.GetBusNames()) {
-            const auto& bus = request_handler.GetBus(bus_name);
+        std::vector<std::string_view> bus_names = request_handler.GetAllBusesFromCatalogue();
+        std::sort(bus_names.begin(), bus_names.end());
+
+        for(const auto& route_name : bus_names) {
+            const auto& bus = request_handler.GetBus(route_name);
             if(bus != nullptr) {
+                std::string bus_name{route_name};
                 size_t pos = (bus->stops.size()) / 2;
-                map_render.AddNewPointByRouteName(bus_name, projector(bus->stops.front()->coordinates), json_reader.GetRenderSettings());
-                map_render.AddNewTextForRoute(bus_name, projector(bus->stops.front()->coordinates), json_reader.GetRenderSettings());
-                map_render.AddNewCircleForStop(bus->stops.front()->name, projector(bus->stops.front()->coordinates), json_reader.GetRenderSettings());
-                map_render.AddNewTextForStop(bus->stops.front()->name, projector(bus->stops.front()->coordinates), json_reader.GetRenderSettings());
+                map_render.AddNewPointByRouteName(bus_name, projector(bus->stops.front()->coordinates), render_settings);
+                map_render.AddNewTextForRoute(bus_name, projector(bus->stops.front()->coordinates), render_settings);
+                map_render.AddNewCircleForStop(bus->stops.front()->name, projector(bus->stops.front()->coordinates), render_settings);
+                map_render.AddNewTextForStop(bus->stops.front()->name, projector(bus->stops.front()->coordinates), render_settings);
                 if(bus->is_circle == false && bus->stops.at(pos) != bus->stops.front()) {
-                    map_render.AddNewTextForRoute(bus_name, projector(bus->stops.at(pos)->coordinates), json_reader.GetRenderSettings());
+                    map_render.AddNewTextForRoute(bus_name, projector(bus->stops.at(pos)->coordinates), render_settings);
                 }
                 for(size_t i = 1; i < bus->stops.size() - 1; ++i) {
-                    map_render.AddNewPointByRouteName(bus_name, projector(bus->stops.at(i)->coordinates), json_reader.GetRenderSettings());
-                    map_render.AddNewCircleForStop(bus->stops.at(i)->name, projector(bus->stops.at(i)->coordinates), json_reader.GetRenderSettings());
-                    map_render.AddNewTextForStop(bus->stops.at(i)->name, projector(bus->stops.at(i)->coordinates), json_reader.GetRenderSettings());
+                    map_render.AddNewPointByRouteName(bus_name, projector(bus->stops.at(i)->coordinates), render_settings);
+                    map_render.AddNewCircleForStop(bus->stops.at(i)->name, projector(bus->stops.at(i)->coordinates), render_settings);
+                    map_render.AddNewTextForStop(bus->stops.at(i)->name, projector(bus->stops.at(i)->coordinates), render_settings);
                 }
-                map_render.AddNewPointByRouteName(bus_name, projector(bus->stops.back()->coordinates), json_reader.GetRenderSettings());
+                map_render.AddNewPointByRouteName(bus_name, projector(bus->stops.back()->coordinates), render_settings);
                 map_render.ChangeCurrentColor();
             }
         }
 
         std::ostringstream svg_output;
-        //request_handler.RenderMap(svg_output);
+        request_handler.RenderMap(svg_output);
 
         json::Array result;
         json::Builder responses;

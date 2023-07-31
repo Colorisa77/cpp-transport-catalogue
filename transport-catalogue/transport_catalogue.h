@@ -27,13 +27,13 @@ namespace transport_catalogue {
 		void AddBus(std::string bus_name, std::vector<std::string>& vect_stops, bool is_circle);
 
 		std::set<std::string_view> GetBusesNamesByStop(std::string_view stop_name) const;
-		const Bus* GetBusByName(const std::string name) const;
+		const Bus* GetBusByName(const std::string& name) const;
 
 		double GetStopToStopDistance(const Stop* from, const Stop* to) const;
 		double GetStopToStopDistanceByName(const std::string_view from, const std::string_view to) const;
         const std::unordered_map<std::pair<const Stop*, const Stop*>, double, StopPairHash>& GetAllDistances() const;
 		
-		std::vector<const Stop*> GetStopsByBusName(std::string name) const;
+		std::vector<const Stop*> GetStopsByBusName(const std::string& name) const;
 		
 		bool IsStopExist(std::string) const;
 		

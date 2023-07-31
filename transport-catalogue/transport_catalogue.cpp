@@ -151,11 +151,11 @@ namespace transport_catalogue {
 		return false;
 	}
 
-	std::vector<const Stop*> TransportCatalogue::GetStopsByBusName(std::string name) const {
+	std::vector<const Stop*> TransportCatalogue::GetStopsByBusName(const std::string& name) const {
 		return buses_index_.at(name)->stops;
 	}
 
-	const Bus* TransportCatalogue::GetBusByName(const std::string name) const {
+	const Bus* TransportCatalogue::GetBusByName(const std::string& name) const {
 		if(buses_index_.count(name) > 0) {
 			return buses_index_.at(name);
 		}
