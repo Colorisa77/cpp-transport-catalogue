@@ -248,8 +248,36 @@ namespace json_reader {
         }
     }
 
+    renderer::RenderSettings SetRenderSettings(const json::Node& render_settings) {
+        renderer::RenderSettings result;
+        result.width = render_settings.AsDict().at("width"s).AsDouble();
+        result.height = render_settings.AsDict().at("height"s).AsDouble();
+        result.padding = render_settings.AsDict().at("padding"s).AsDouble();
+        result.line_width = render_settings.AsDict().at("line_width"s).AsDouble();
+        result.stop_radius = render_settings.AsDict().at("stop_radius"s).AsDouble();
+        result.bus_label_font_size = render_settings.AsDict().at("bus_label_font_size"s).AsInt();
+
+        svg::Point point_bus_label_offset{render_settings.AsDict().at("bus_label_offset"s).AsArray().at(0).AsDouble(), render_settings.AsDict().at("bus_label_offset"s).AsArray().at(1).AsDouble()};
+        result.bus_label_offset = point_bus_label_offset;
+
+        result.stop_label_font_size = render_settings.AsDict().at("stop_label_font_size"s).AsInt();
+
+        svg::Point point_stop_label_offset{render_settings.AsDict().at("stop_label_offset"s).AsArray().at(0).AsDouble(), render_settings.AsDict().at("stop_label_offset"s).AsArray().at(1).AsDouble()};
+        result.stop_label_offset = point_stop_label_offset;
+
+        svg::Color underlayer_color (renderer::GetColorFromUnderlayerColorNode(render_settings));
+        result.underlayer_color = underlayer_color;
+
+        result.underlayer_width = render_settings.AsDict().at("underlayer_width"s).AsDouble();
+
+        result.color_palette = renderer::GetColorFromColorPaletteNode(render_settings);
+
+        return result;
+    }
+
     void SequentialRequestProcessing(
-        transport_catalogue::TransportCatalogue& transport_catalogue, 
+        transport_catalogue::TransportCatalogue& transport_catalogue,
+        renderer::RenderSettings& render_settings,
         router::TransportRouter& router, 
         renderer::MapRenderer& map_render, 
         JsonReader& json_reader,
@@ -257,21 +285,20 @@ namespace json_reader {
         request_handler::RequestHandler& request_handler) {
 
         //до этого момента нужно заполнять транспортный каталог.
-
         (void)transport_catalogue;
         (void)router;
-        (void)map_render;
+
 
         /*router.FillTransportRouter(
             transport_catalogue, 
             json_reader.GetRouteSettings().at("bus_velocity"s).AsDouble(), 
             json_reader.GetRouteSettings().at("bus_wait_time"s).AsInt()
-        );
+        );*/
 
         renderer::MapVisualizationSettings settings(
-            json_reader.GetRenderSettings().at("width"s).AsDouble(), 
-            json_reader.GetRenderSettings().at("height"s).AsDouble(), 
-            json_reader.GetRenderSettings().at("padding"s).AsDouble()
+            render_settings.width,
+            render_settings.height,
+            render_settings.padding
         );
         std::vector<geo::Coordinates> route_coordinates = request_handler.GetCoordinatesFromStopsWithCoordinates();
         renderer::SphereProjector projector(
@@ -281,7 +308,7 @@ namespace json_reader {
             settings.max_height, 
             settings.padding
         );
-        map_render.SetPossibleColors(json_reader.GetRenderSettings().at("color_palette"s).AsArray());
+        map_render.SetPossibleColors(render_settings.color_palette);
 
         for(const auto& bus_name : json_reader.GetBusNames()) {
             const auto& bus = request_handler.GetBus(bus_name);
@@ -303,7 +330,7 @@ namespace json_reader {
                 map_render.ChangeCurrentColor();
             }
         }
-        */
+
         std::ostringstream svg_output;
         //request_handler.RenderMap(svg_output);
 

@@ -7,7 +7,7 @@
 #include <unordered_map>
 
 namespace serialization {
-    void SerializeTransportCatalogue(transport_catalogue_proto::Catalogue& catalogue, const transport_catalogue::TransportCatalogue& transport_catalogue, json_reader::JsonReader& json_reader) {
+    void SerializeTransportCatalogue(transport_catalogue_proto::Catalogue& catalogue, const transport_catalogue::TransportCatalogue& transport_catalogue) {
         //std::string file_name = json_reader.GetSerializationSettingsRequests().at("file"s).AsString();
         //std::ofstream out_file(file_name, std::ios::binary);
         transport_catalogue_proto::TransportCatalogue transport_catalogue_proto;
@@ -124,28 +124,68 @@ namespace serialization {
 
         render_settings_proto.set_underlayer_width(render_settings.underlayer_width);
 
-
         for(svg::Color color : render_settings.color_palette) {
             serialization::SerializeColor(color, color_proto);
             render_settings_proto.add_color_palette()->Swap(&color_proto);
         }
+        catalogue.mutable_render_settings()->Swap(&render_settings_proto);
     }
 
-    void DeserializeTransportCatalogue(transport_catalogue::TransportCatalogue& transport_catalogue, json_reader::JsonReader& json_reader) {
+    void SerializeCatalogue(const transport_catalogue_proto::Catalogue& catalogue, json_reader::JsonReader& json_reader) {
+        std::string file = json_reader.GetSerializationSettingsRequests().at("file"s).AsString();
+        std::ofstream out_file(file, std::ios::binary);
+        catalogue.SerializeToOstream(&out_file);
+    }
+
+    void DeserializeCatalogue(transport_catalogue_proto::Catalogue& catalogue_proto, json_reader::JsonReader& json_reader) {
         std::string file_name = json_reader.GetSerializationSettingsRequests().at("file"s).AsString();
         std::ifstream in_file(file_name, std::ios::binary);
-        transport_catalogue_proto::TransportCatalogue transport_catalogue_proto;
+
+        catalogue_proto.ParseFromIstream(&in_file);
+    }
+
+    svg::Color DeserializeColor(transport_catalogue_proto::Color& color_proto, json_reader::JsonReader& json_reader) {
+        std::string file_name = json_reader.GetSerializationSettingsRequests().at("file"s).AsString();
+        std::ifstream in_file(file_name, std::ios::binary);
+
+        if(color_proto.ParseFromIstream(&in_file)) {
+            if(color_proto.has_rgb()) {
+                svg::Rgb rgb;
+                const transport_catalogue_proto::Rgb& rgb_proto = color_proto.rgb();
+                rgb.red = rgb_proto.red();
+                rgb.green = rgb_proto.green();
+                rgb.blue = rgb_proto.blue();
+                return {svg::Rgb(rgb)};
+
+            } else if(color_proto.has_rgba()) {
+                svg::Rgba rgba;
+                const transport_catalogue_proto::Rgba& rgba_proto = color_proto.rgba();
+                rgba.red = rgba_proto.red();
+                rgba.green = rgba_proto.green();
+                rgba.blue = rgba_proto.blue();
+                rgba.opacity = rgba_proto.opacity();
+                return {svg::Rgba(rgba)};
+            } else {
+                return {svg::Color(color_proto.color_string())};
+            }
+        }
+        return svg::Color{};
+    }
+
+    void DeserializeTransportCatalogue(transport_catalogue::TransportCatalogue& transport_catalogue, transport_catalogue_proto::Catalogue& catalogue_proto, json_reader::JsonReader& json_reader) {
+        std::string file_name = json_reader.GetSerializationSettingsRequests().at("file"s).AsString();
+        std::ifstream in_file(file_name, std::ios::binary);
 
         std::unordered_map<uint32_t, std::string> stop_indexes;
-        stop_indexes.reserve(transport_catalogue_proto.stops_size());
+        stop_indexes.reserve(catalogue_proto.transport_catalogue().stops_size());
 
-        if(transport_catalogue_proto.ParseFromIstream(&in_file)) {
-            for(auto& stop_proto : transport_catalogue_proto.stops()) {
+        if(catalogue_proto.ParseFromIstream(&in_file)) {
+            for(auto& stop_proto : catalogue_proto.transport_catalogue().stops()) {
                 stop_indexes[stop_proto.id()] = stop_proto.name();
                 transport_catalogue.AddStop(stop_proto.name(), {stop_proto.coordinates().lat(), stop_proto.coordinates().lng()});
             }
 
-            for(auto& bus_proto : transport_catalogue_proto.buses()) {
+            for(auto& bus_proto : catalogue_proto.transport_catalogue().buses()) {
                 std::vector<std::string> stops;
                 stops.reserve(bus_proto.stop_ids().size());
                 for(uint32_t stop_id : bus_proto.stop_ids()) {
@@ -158,7 +198,7 @@ namespace serialization {
                 }
             }
 
-            for(const auto& stop_to_stop_distance_proto : transport_catalogue_proto.stop_to_stop_distances()) {
+            for(const auto& stop_to_stop_distance_proto : catalogue_proto.transport_catalogue().stop_to_stop_distances()) {
                 std::string from_stop_name = stop_indexes.at(stop_to_stop_distance_proto.from_stop_id());
                 std::string to_stop_name = stop_indexes.at(stop_to_stop_distance_proto.to_stop_id());
 
@@ -167,39 +207,42 @@ namespace serialization {
         }
     }
 
-renderer::RenderSettings DeserializeRenderSettings(const transport_catalogue_proto::RenderSettings& render_settings_proto) {
-    renderer::RenderSettings render_settings;
+    void DeserializeRenderSettings(renderer::RenderSettings& render_settings, transport_catalogue_proto::Catalogue& catalogue_proto, json_reader::JsonReader& json_reader) {
+        std::string file_name = json_reader.GetSerializationSettingsRequests().at("file"s).AsString();
+        std::ifstream in_file(file_name, std::ios::binary);
 
-    render_settings.width = render_settings_proto.width();
-    render_settings.height = render_settings_proto.height();
-    render_settings.padding = render_settings_proto.padding();
-    render_settings.line_width = render_settings_proto.line_width();
-    render_settings.stop_radius = render_settings_proto.stop_radius();
-    render_settings.bus_label_font_size = render_settings_proto.bus_label_font_size();
+        if(catalogue_proto.ParseFromIstream(&in_file)) {
+            render_settings.width = catalogue_proto.render_settings().width();
+            render_settings.height = catalogue_proto.render_settings().height();
+            render_settings.padding = catalogue_proto.render_settings().padding();
+            render_settings.line_width = catalogue_proto.render_settings().line_width();
+            render_settings.stop_radius = catalogue_proto.render_settings().stop_radius();
+            render_settings.bus_label_font_size = catalogue_proto.render_settings().bus_label_font_size();
 
-    // Retrieve bus_label_offset values and set them in the renderer::RenderSettings object
-    const transport_catalogue_proto::Point& bus_label_offset_proto = render_settings_proto.bus_label_offset();
-    render_settings.bus_label_offset.x = bus_label_offset_proto.x();
-    render_settings.bus_label_offset.y = bus_label_offset_proto.y();
+            const transport_catalogue_proto::Point& bus_label_offset_proto = catalogue_proto.render_settings().bus_label_offset();
+            render_settings.bus_label_offset.x = bus_label_offset_proto.x();
+            render_settings.bus_label_offset.y = bus_label_offset_proto.y();
 
-    render_settings.stop_label_font_size = render_settings_proto.stop_label_font_size();
+            render_settings.stop_label_font_size = catalogue_proto.render_settings().stop_label_font_size();
 
-    // Retrieve stop_label_offset values and set them in the renderer::RenderSettings object
-    const transport_catalogue_proto::Point& stop_label_offset_proto = render_settings_proto.stop_label_offset();
-    render_settings.stop_label_offset.x = stop_label_offset_proto.x();
-    render_settings.stop_label_offset.y = stop_label_offset_proto.y();
+            const transport_catalogue_proto::Point& stop_label_offset_proto = catalogue_proto.render_settings().stop_label_offset();
+            render_settings.stop_label_offset.x = stop_label_offset_proto.x();
+            render_settings.stop_label_offset.y = stop_label_offset_proto.y();
 
-    // Deserialize the underlayer_color using the DeserializeColor function
-    render_settings.underlayer_color = DeserializeColor(render_settings_proto.underlayer_color());
+            transport_catalogue_proto::Color underlayer_color_proto = catalogue_proto.render_settings().underlayer_color();
+            render_settings.underlayer_color = DeserializeColor(underlayer_color_proto, json_reader);
 
-    render_settings.underlayer_width = render_settings_proto.underlayer_width();
+            render_settings.underlayer_width = catalogue_proto.render_settings().underlayer_width();
 
-    // Deserialize color_palette using the DeserializeColor function for each color
-    for (const transport_catalogue_proto::Color& color_proto : render_settings_proto.color_palette()) {
-        render_settings.color_palette.push_back(DeserializeColor(color_proto));
+            std::vector<svg::Color> color_palette;
+            color_palette.reserve(catalogue_proto.render_settings().color_palette().size());
+            for (transport_catalogue_proto::Color color_proto : catalogue_proto.render_settings().color_palette()) {
+                svg::Color color;
+                color = DeserializeColor(color_proto, json_reader);
+                color_palette.push_back(color);
+            }
+            render_settings.color_palette = std::move(color_palette);
+        }
     }
-
-    return render_settings;
-}
 
 } // namespace serialization

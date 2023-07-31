@@ -36,5 +36,5 @@ message TransportCatalogue {
 
 message Catalogue {
     TransportCatalogue transport_catalogue = 1;
-    RenderSettings map_renderer = 2;
+    RenderSettings render_settings = 2;
 }

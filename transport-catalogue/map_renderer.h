@@ -111,22 +111,22 @@ namespace renderer {
 
         void Render(std::ostream& output) const;
 
-        void SetPossibleColors(const json::Array& colors);
+        void SetPossibleColors(const std::vector<svg::Color>& colors);
 
         void ChangeCurrentColor();
 
-        json::Node GetCurrentColor() const;
+        svg::Color GetCurrentColor() const;
 
     private:
-        svg::Color GetColorFromNode(const json::Node& render_attachments) const;
-        svg::Color GetColor() const;
-
         size_t current_color_ = 0;
-        std::unordered_map<size_t, json::Node> color_palette_;
+        std::unordered_map<size_t, svg::Color> color_palette_;
         std::map<std::string_view, svg::Polyline> routes_polyline_;
         std::map<std::string_view, std::deque<svg::Text>> routes_texts_;
         std::map<std::string_view, std::deque<svg::Circle>> stops_circles_;
         std::map<std::string_view, std::deque<svg::Text>> stops_texts_;
         std::deque<std::string> bus_stops_names_;
     };
+
+    svg::Color GetColorFromUnderlayerColorNode(const json::Node& render_attachments);
+    std::vector<svg::Color> GetColorFromColorPaletteNode(const json::Node& render_attachments);
 }
