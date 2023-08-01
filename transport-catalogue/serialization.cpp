@@ -8,8 +8,6 @@
 
 namespace serialization {
     void SerializeTransportCatalogue(transport_catalogue_proto::Catalogue& catalogue, const transport_catalogue::TransportCatalogue& transport_catalogue) {
-        //std::string file_name = json_reader.GetSerializationSettingsRequests().at("file"s).AsString();
-        //std::ofstream out_file(file_name, std::ios::binary);
         transport_catalogue_proto::TransportCatalogue transport_catalogue_proto;
 
         std::vector<transport_catalogue_proto::Stop> stops_proto_vector;
@@ -257,7 +255,7 @@ namespace serialization {
             color_palette_proto_indexes[color_proto.id()] = color_proto.color();
         }
 
-        for (uint32_t i = 0; i < color_palette_proto_indexes.size(); ++i) {
+        for(uint32_t i = 0; i < color_palette_proto_indexes.size(); ++i) {
             svg::Color color = DeserializeColorPalette(color_palette_proto_indexes.at(i));
             color_palette.push_back(color);
         }
