@@ -13,6 +13,21 @@
 
 namespace renderer {
 
+    struct RenderSettings {
+        double width;
+        double height;
+        double padding;
+        double line_width;
+        double stop_radius;
+        uint32_t bus_label_font_size;
+        svg::Point bus_label_offset;
+        uint32_t stop_label_font_size;
+        svg::Point stop_label_offset;
+        svg::Color underlayer_color;
+        double underlayer_width;
+        std::vector<svg::Color> color_palette;
+    };
+
     struct MapVisualizationSettings {
         double max_width;
         double max_height;
@@ -87,31 +102,31 @@ namespace renderer {
 
     class MapRenderer {
     public:
-        void AddNewPointByRouteName(const std::string& route_name, const svg::Point& point, const json::Node& render_attachments);
-        void AddNewTextForRoute(const std::string& route_name, const svg::Point& point, const json::Node& render_attachments);
-        void AddNewCircleForStop(const std::string_view stop_name, const svg::Point& point, const json::Node& render_attachments);
-        void AddNewTextForStop(const std::string_view stop_name, const svg::Point& point, const json::Node& render_attachments);
+        void AddNewPointByRouteName(const std::string& route_name, const svg::Point& point, const RenderSettings& render_settings);
+        void AddNewTextForRoute(const std::string& route_name, const svg::Point& point, const RenderSettings& render_settings);
+        void AddNewCircleForStop(const std::string_view stop_name, const svg::Point& point, const RenderSettings& render_settings);
+        void AddNewTextForStop(const std::string_view stop_name, const svg::Point& point, const RenderSettings& render_settings);
 
-        svg::Text SetNewSubstrateForText(const svg::Point& point, const json::Node& render_attachments);
+        svg::Text SetNewSubstrateForText(const svg::Point& point, const RenderSettings& render_settings);
 
         void Render(std::ostream& output) const;
 
-        void SetPossibleColors(const json::Array& colors);
+        void SetPossibleColors(const std::vector<svg::Color>& colors);
 
         void ChangeCurrentColor();
 
-        json::Node GetCurrentColor() const;
+        svg::Color GetCurrentColor() const;
 
     private:
-        svg::Color GetColorFromNode(const json::Node& render_attachments) const;
-        svg::Color GetColor() const;
-
         size_t current_color_ = 0;
-        std::unordered_map<size_t, json::Node> color_palette_;
+        std::unordered_map<size_t, svg::Color> color_palette_;
         std::map<std::string_view, svg::Polyline> routes_polyline_;
         std::map<std::string_view, std::deque<svg::Text>> routes_texts_;
         std::map<std::string_view, std::deque<svg::Circle>> stops_circles_;
         std::map<std::string_view, std::deque<svg::Text>> stops_texts_;
         std::deque<std::string> bus_stops_names_;
     };
+
+    svg::Color GetColorFromUnderlayerColorNode(const json::Node& render_attachments);
+    std::vector<svg::Color> GetColorFromColorPaletteNode(const json::Node& render_attachments);
 }

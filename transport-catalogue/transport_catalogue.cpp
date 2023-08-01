@@ -26,6 +26,10 @@ namespace transport_catalogue {
 		}
 	}
 
+    void TransportCatalogue::ChangeLastRouteRoundTrip() {
+        buses_.back().is_circle = !buses_.back().is_circle;
+    }
+
 	void TransportCatalogue::AddBus(std::string bus_name, std::vector<std::string>& vect_stops, bool is_circle) {
 		if (buses_index_.count(bus_name) == 0) {
 			std::vector<std::string> new_stops;
@@ -136,6 +140,10 @@ namespace transport_catalogue {
 		return GetStopToStopDistance(stop_index_.at(from), stop_index_.at(to));
 	}
 
+    const std::unordered_map<std::pair<const Stop*, const Stop*>, double, StopPairHash>& TransportCatalogue::GetAllDistances() const {
+        return stop_to_stop_distances_;
+    }
+
 	bool TransportCatalogue::IsStopExist(std::string name) const {
 		if (stop_index_.count(name) > 0) {
 			return true;
@@ -143,11 +151,11 @@ namespace transport_catalogue {
 		return false;
 	}
 
-	std::vector<const Stop*> TransportCatalogue::GetStopsByBusName(std::string name) const {
+	std::vector<const Stop*> TransportCatalogue::GetStopsByBusName(const std::string& name) const {
 		return buses_index_.at(name)->stops;
 	}
 
-	const Bus* TransportCatalogue::GetBusByName(const std::string name) const {
+	const Bus* TransportCatalogue::GetBusByName(const std::string& name) const {
 		if(buses_index_.count(name) > 0) {
 			return buses_index_.at(name);
 		}

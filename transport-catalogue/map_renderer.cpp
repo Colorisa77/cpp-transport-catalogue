@@ -19,10 +19,10 @@ namespace renderer {
         };
     }
 
-    void MapRenderer::AddNewPointByRouteName(const std::string& route_name, const svg::Point& point, const json::Node& render_attachmets) {
+    void MapRenderer::AddNewPointByRouteName(const std::string& route_name, const svg::Point& point, const RenderSettings& render_settings) {
         using namespace std::literals;
-        double line_width = render_attachmets.AsDict().at("line_width"s).AsDouble();
-        svg::Color color = GetColor();
+        double line_width = render_settings.line_width;
+        svg::Color color = GetCurrentColor();
         if(routes_polyline_.count(route_name) > 0) {
             routes_polyline_.at(route_name)
                 .AddPoint(point)
@@ -43,19 +43,16 @@ namespace renderer {
             .SetStrokeLineJoin(svg::StrokeLineJoin::ROUND);
     }
 
-    void MapRenderer::AddNewTextForRoute(const std::string& route_name, const svg::Point& point, const json::Node& render_attachments) {
+    void MapRenderer::AddNewTextForRoute(const std::string& route_name, const svg::Point& point, const RenderSettings& render_settings) {
         using namespace std::literals;
         svg::Text text;
-        svg::Point offset = {
-            render_attachments.AsDict().at("bus_label_offset"s).AsArray().at(0).AsDouble(),
-            render_attachments.AsDict().at("bus_label_offset"s).AsArray().at(1).AsDouble()
-        };
-        uint32_t font_size = static_cast<uint32_t>(render_attachments.AsDict().at("bus_label_font_size"s).AsInt());
+        svg::Point offset = render_settings.bus_label_offset;
+        uint32_t font_size = static_cast<uint32_t>(render_settings.bus_label_font_size);
         std::string font_family = "Verdana"s;
         std::string font_weight = "bold"s;
-        svg::Color color = GetColor();
+        svg::Color color = GetCurrentColor();
 
-        svg::Text text_substrate = SetNewSubstrateForText(point, render_attachments);
+        svg::Text text_substrate = SetNewSubstrateForText(point, render_settings);
         text_substrate.SetData(bus_stops_names_.back());
         routes_texts_[bus_stops_names_.back()].push_back(text_substrate);
 
@@ -69,16 +66,13 @@ namespace renderer {
         routes_texts_[bus_stops_names_.back()].push_back(text);
     }
 
-    svg::Text MapRenderer::SetNewSubstrateForText(const svg::Point& point, const json::Node& render_attachments) {
+    svg::Text MapRenderer::SetNewSubstrateForText(const svg::Point& point, const RenderSettings& render_settings) {
         using namespace std::literals;
         svg::Text text_substrate;
-        svg::Color fill_and_stoke_color = GetColorFromNode(render_attachments);
-        double stroke_width = render_attachments.AsDict().at("underlayer_width"s).AsDouble();
-        svg::Point offset = {
-            render_attachments.AsDict().at("bus_label_offset"s).AsArray().at(0).AsDouble(),
-            render_attachments.AsDict().at("bus_label_offset"s).AsArray().at(1).AsDouble()
-        };
-        uint32_t font_size = static_cast<uint32_t>(render_attachments.AsDict().at("bus_label_font_size"s).AsInt());
+        svg::Color fill_and_stoke_color = render_settings.underlayer_color;
+        double stroke_width = render_settings.underlayer_width;
+        svg::Point offset = render_settings.bus_label_offset;
+        uint32_t font_size = static_cast<uint32_t>(render_settings.bus_label_font_size);
         svg::StrokeLineCap line_cap = svg::StrokeLineCap::ROUND;
         svg::StrokeLineJoin line_join = svg::StrokeLineJoin::ROUND;
         std::string font_family = "Verdana"s;
@@ -95,33 +89,30 @@ namespace renderer {
         return text_substrate;
     }
 
-    void MapRenderer::AddNewCircleForStop(const std::string_view stop_name, const svg::Point& point, const json::Node& render_attachments) {
+    void MapRenderer::AddNewCircleForStop(const std::string_view stop_name, const svg::Point& point, const RenderSettings& render_settings) {
         if(stops_circles_.count(stop_name) > 0) {
             return;
-        } 
+        }
         using namespace std::literals;
         svg::Circle circle;
-        double radius = render_attachments.AsDict().at("stop_radius"s).AsDouble();
+        double radius =render_settings.stop_radius;
         svg::Color color("white"s);
         circle.SetCenter(point).SetRadius(radius).SetFillColor(color);
         stops_circles_[stop_name].push_back(circle);
     }
 
-    void MapRenderer::AddNewTextForStop(const std::string_view stop_name, const svg::Point& point, const json::Node& render_attachments) {
+    void MapRenderer::AddNewTextForStop(const std::string_view stop_name, const svg::Point& point, const RenderSettings& render_settings) {
         if(stops_texts_.count(stop_name) > 0) {
             return;
         }
         using namespace std::literals;
         svg::Text text;
         svg::Color fill("black"s);
-        svg::Point offset = {
-            render_attachments.AsDict().at("stop_label_offset"s).AsArray().at(0).AsDouble(),
-            render_attachments.AsDict().at("stop_label_offset"s).AsArray().at(1).AsDouble()
-        };
-        uint32_t font_size = static_cast<uint32_t>(render_attachments.AsDict().at("stop_label_font_size"s).AsInt());
+        svg::Point offset = render_settings.stop_label_offset;
+        uint32_t font_size = static_cast<uint32_t>(render_settings.stop_label_font_size);
         std::string font_family = "Verdana"s;
         std::string stop = {stop_name.data(), stop_name.size()};
-        svg::Text text_substrate = SetNewSubstrateForText(point, render_attachments);
+        svg::Text text_substrate = SetNewSubstrateForText(point, render_settings);
         text_substrate.SetOffset(offset)
             .SetFontSize(font_size)
             .SetFontWeight("")
@@ -159,7 +150,7 @@ namespace renderer {
         doc.Render(output);
     }
 
-    void MapRenderer::SetPossibleColors(const json::Array& colors) {
+    void MapRenderer::SetPossibleColors(const std::vector<svg::Color>& colors) {
         size_t curr_color = 0;
         for(const auto& color : colors) {
             color_palette_.emplace(curr_color, color);
@@ -175,11 +166,11 @@ namespace renderer {
         ++current_color_;
     }
 
-    json::Node MapRenderer::GetCurrentColor() const {
+    svg::Color MapRenderer::GetCurrentColor() const {
         return color_palette_.at(current_color_);
     }
 
-    svg::Color MapRenderer::GetColorFromNode(const json::Node& render_attachments) const {
+    svg::Color GetColorFromUnderlayerColorNode(const json::Node& render_attachments) {
         using namespace std::literals;
         svg::Color color;
         json::Node attachments = render_attachments.AsDict().at("underlayer_color"s);
@@ -199,21 +190,28 @@ namespace renderer {
         return color;
     }
 
-    svg::Color MapRenderer::GetColor() const {
-        svg::Color color;
-        if(color_palette_.at(current_color_).IsString()) {
-            color = color_palette_.at(current_color_).AsString();
-        } else if (color_palette_.at(current_color_).IsArray() && color_palette_.at(current_color_).AsArray().size() >= 3) {
-            uint8_t red_color = static_cast<uint8_t>(color_palette_.at(current_color_).AsArray().at(0).AsInt());
-            uint8_t green_color = static_cast<uint8_t>(color_palette_.at(current_color_).AsArray().at(1).AsInt());
-            uint8_t blue_color = static_cast<uint8_t>(color_palette_.at(current_color_).AsArray().at(2).AsInt());
-            if(color_palette_.at(current_color_).AsArray().size() == 3) {
-                color = svg::Rgb{red_color, green_color, blue_color};
-            } else {
-                double opacity = color_palette_.at(current_color_).AsArray().at(3).AsDouble();
-                color = svg::Rgba{red_color, green_color, blue_color, opacity};
+    std::vector<svg::Color> GetColorFromColorPaletteNode(const json::Node& render_attachments) {
+        using namespace std::literals;
+        std::vector<svg::Color> result;
+        result.reserve(render_attachments.AsDict().size());
+        json::Node attachments = render_attachments.AsDict().at("color_palette"s);
+        for(auto& node : attachments.AsArray()) {
+            svg::Color current_color;
+            if(node.IsString()) {
+                current_color = node.AsString();
+            } else if (node.IsArray() && node.AsArray().size() >= 3) {
+                uint8_t red_color = static_cast<uint8_t>(node.AsArray().at(0).AsInt());
+                uint8_t green_color = static_cast<uint8_t>(node.AsArray().at(1).AsInt());
+                uint8_t blue_color = static_cast<uint8_t>(node.AsArray().at(2).AsInt());
+                if(node.AsArray().size() == 3) {
+                    current_color = svg::Rgb{red_color, green_color, blue_color};
+                } else {
+                    double opacity = node.AsArray().at(3).AsDouble();
+                    current_color = svg::Rgba{red_color, green_color, blue_color, opacity};
+                }
             }
+            result.push_back(current_color);
         }
-        return color;
+        return result;
     }
 }

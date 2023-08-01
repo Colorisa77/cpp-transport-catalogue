@@ -5,6 +5,7 @@
 #include <deque>
 #include <optional>
 #include "geo.h"
+#include "svg.h"
 
 namespace transport_catalogue {
 

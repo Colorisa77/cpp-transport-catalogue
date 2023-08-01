@@ -22,7 +22,9 @@ namespace request_handler {
 
         std::vector<geo::Coordinates> GetCoordinatesFromStopsWithCoordinates() const;
 
-        const transport_catalogue::Bus* GetBus(const std::string bus_name) const; 
+        std::vector<std::string_view> GetAllBusesFromCatalogue() const;
+        const transport_catalogue::Bus* GetBus(const std::string_view bus_name) const;
+
         transport_catalogue::Stop GetStop(const std::string_view stop_name) const; 
 
         void RenderMap(std::ostream& output) const;

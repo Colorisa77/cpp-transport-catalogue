@@ -10,6 +10,11 @@ namespace graph {
 using VertexId = size_t;
 using EdgeId = size_t;
 
+struct RouteSettings {
+    uint32_t bus_wait_time = 0;
+    double bus_velocity = 0.0;
+};
+
 template <typename Weight>
 struct Edge {
     VertexId from;
