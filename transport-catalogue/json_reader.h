@@ -51,7 +51,6 @@ namespace json_reader {
     json::Node AddBusInfoResponse(const request_handler::RequestHandler& request_handler, const json::Node& request_body);
     json::Node AddRouteInfoResponse(const request_handler::RequestHandler& request_handler, const json::Node& request_body);
 
-
     void FillingTransportCatalogue(transport_catalogue::TransportCatalogue& transport_catalogue, JsonReader& json_reader);
     renderer::RenderSettings SetRenderSettings(const json::Node& render_settings);
     graph::RouteSettings SetRoutingSettings(const json::Node& routing_settings);
