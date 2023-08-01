@@ -4,7 +4,6 @@
 #include "transport_router.h"
 #include "serialization.h"
 
-#include <fstream>
 #include <iostream>
 #include <string_view>
 
@@ -51,6 +50,7 @@ void ProcessRequests(transport_catalogue::TransportCatalogue& transport_catalogu
                      graph::RouteSettings& route_settigns,
                      json_reader::JsonReader& json_reader,
                      std::ostream& output) {
+
     transport_catalogue_proto::Catalogue catalogue_proto;
 
     serialization::DeserializeCatalogue(catalogue_proto, json_reader);
@@ -85,8 +85,13 @@ int main(int argc, char* argv[]) {
 
     } else if (mode == "process_requests"sv) {
         // process requests here
-        std::ofstream output("output.json");
-        ProcessRequests(transport_catalogue, render_settings, route_settings, json_reader, output);
+        ProcessRequests(
+            transport_catalogue,
+            render_settings,
+            route_settings,
+            json_reader,
+            std::cout
+        );
 
     } else {
         PrintUsage();
