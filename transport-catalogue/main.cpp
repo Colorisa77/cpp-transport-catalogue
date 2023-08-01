@@ -2,6 +2,7 @@
 #include "json_reader.h"
 #include "map_renderer.h"
 #include "transport_router.h"
+
 #include "serialization.h"
 
 #include <iostream>
@@ -12,6 +13,8 @@ void QueryProcessing(transport_catalogue::TransportCatalogue& transport_catalogu
                      graph::RouteSettings& route_settings,
                      json_reader::JsonReader& json_reader,
                      std::ostream& output) {
+
+
 
     router::TransportRouter router;
     renderer::MapRenderer map_render;
@@ -42,7 +45,6 @@ void MakeBase(transport_catalogue::TransportCatalogue& transport_catalogue,
     serialization::SerializeRenderSettings(catalogue, render_settings);
     serialization::SerializeRouteSettings(catalogue, route_settigns);
     serialization::SerializeCatalogue(catalogue, json_reader);
-
 }
 
 void ProcessRequests(transport_catalogue::TransportCatalogue& transport_catalogue,

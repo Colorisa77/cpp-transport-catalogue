@@ -219,6 +219,7 @@ namespace json_reader {
     }
 
     void FillingTransportCatalogue(transport_catalogue::TransportCatalogue& transport_catalogue, JsonReader& json_reader) {
+
         for(const auto& request_body : json_reader.GetBaseRequests()) {
             if(request_body.AsDict().at("type"s).AsString() == "Stop"s) {
                 FillStopsByRequestBody(transport_catalogue, request_body);
