@@ -182,12 +182,12 @@ namespace json_reader {
         return doc_.GetRoot().AsDict().at("render_settings"s).AsDict();
     }
 
-    const json::Array& JsonReader::GetStatRequests() const {
-        return doc_.GetRoot().AsDict().at("stat_requests"s).AsArray();
-    }
-    
     const json::Dict& JsonReader::GetRouteSettings() const {
         return doc_.GetRoot().AsDict().at("routing_settings"s).AsDict();
+    }
+
+    const json::Array& JsonReader::GetStatRequests() const {
+        return doc_.GetRoot().AsDict().at("stat_requests"s).AsArray();
     }
 
     void JsonReader::AddRouteCoordinates(geo::Coordinates coordinates) {
@@ -275,25 +275,26 @@ namespace json_reader {
         return result;
     }
 
+    graph::RouteSettings SetRoutingSettings(const json::Node& routing_settings) {
+        graph::RouteSettings result;
+
+        result.bus_velocity = routing_settings.AsDict().at("bus_velocity"s).AsDouble();
+        result.bus_wait_time = routing_settings.AsDict().at("bus_wait_time"s).AsInt();
+
+        return result;
+    }
+
     void SequentialRequestProcessing(
         transport_catalogue::TransportCatalogue& transport_catalogue,
         renderer::RenderSettings& render_settings,
+        graph::RouteSettings& route_settings,
         router::TransportRouter& router, 
         renderer::MapRenderer& map_render, 
         JsonReader& json_reader,
         std::ostream& output, 
         request_handler::RequestHandler& request_handler) {
 
-        //до этого момента нужно заполнять транспортный каталог.
-        (void)transport_catalogue;
-        (void)router;
-
-
-        /*router.FillTransportRouter(
-            transport_catalogue, 
-            json_reader.GetRouteSettings().at("bus_velocity"s).AsDouble(), 
-            json_reader.GetRouteSettings().at("bus_wait_time"s).AsInt()
-        );*/
+        router.FillTransportRouter(transport_catalogue, route_settings.bus_velocity, route_settings.bus_wait_time);
 
         renderer::MapVisualizationSettings settings(
             render_settings.width,

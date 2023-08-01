@@ -135,6 +135,14 @@ namespace serialization {
         catalogue.mutable_render_settings()->Swap(&render_settings_proto);
     }
 
+    void SerializeRouteSettings(transport_catalogue_proto::Catalogue& catalogue, const graph::RouteSettings& route_settings) {
+        transport_catalogue_proto::RouteSettings route_settings_proto;
+        route_settings_proto.set_bus_wait_time(route_settings.bus_wait_time);
+        route_settings_proto.set_bus_velocity(route_settings.bus_velocity);
+
+        catalogue.mutable_route_settings()->Swap(&route_settings_proto);
+    }
+
     void SerializeCatalogue(const transport_catalogue_proto::Catalogue& catalogue, json_reader::JsonReader& json_reader) {
         std::string file = json_reader.GetSerializationSettingsRequests().at("file"s).AsString();
         std::ofstream out_file(file, std::ios::binary);
@@ -261,6 +269,11 @@ namespace serialization {
         }
         render_settings.color_palette = std::move(color_palette);
 
+    }
+
+    void DeserializeRouteSettings(graph::RouteSettings& route_settings, transport_catalogue_proto::Catalogue& catalogue_proto) {
+        route_settings.bus_wait_time = catalogue_proto.route_settings().bus_wait_time();
+        route_settings.bus_velocity = catalogue_proto.route_settings().bus_velocity();
     }
 
 } // namespace serialization

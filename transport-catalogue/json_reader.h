@@ -54,9 +54,12 @@ namespace json_reader {
 
     void FillingTransportCatalogue(transport_catalogue::TransportCatalogue& transport_catalogue, JsonReader& json_reader);
     renderer::RenderSettings SetRenderSettings(const json::Node& render_settings);
+    graph::RouteSettings SetRoutingSettings(const json::Node& routing_settings);
+
     void SequentialRequestProcessing(
         transport_catalogue::TransportCatalogue& transport_catalogue,
         renderer::RenderSettings& render_settings,
+        graph::RouteSettings& route_settings,
         router::TransportRouter& router, 
         renderer::MapRenderer& map_render, 
         json_reader::JsonReader& json_reader,

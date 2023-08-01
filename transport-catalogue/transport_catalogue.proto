@@ -3,6 +3,7 @@ syntax = "proto3";
 package transport_catalogue_proto;
 
 import "map_renderer.proto";
+import "graph.proto";
 
 message Coordinates {
     double lat = 1;
@@ -37,4 +38,5 @@ message TransportCatalogue {
 message Catalogue {
     TransportCatalogue transport_catalogue = 1;
     RenderSettings render_settings = 2;
+    RouteSettings route_settings = 3;
 }
