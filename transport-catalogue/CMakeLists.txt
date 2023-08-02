@@ -20,4 +20,4 @@ add_executable(transport_catalogue_proto main.cpp ${PROTO_SRCS} ${PROTO_HDRS} ${
 
 target_include_directories(transport_catalogue_proto PUBLIC ${Protobuf_INCLUDE_DIRS})
 target_include_directories(transport_catalogue_proto PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
-target_link_libraries(18_transport_catalogue_proto "$<IF:$<CONFIG:Debug>,${Protobuf_LIBRARY_DEBUG},${Protobuf_LIBRARY}>" Threads::Threads)
+target_link_libraries(transport_catalogue_proto "$<IF:$<CONFIG:Debug>,${Protobuf_LIBRARY_DEBUG},${Protobuf_LIBRARY}>" Threads::Threads)

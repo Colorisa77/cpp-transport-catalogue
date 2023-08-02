@@ -33,7 +33,7 @@ void QueryProcessing(transport_catalogue::TransportCatalogue& transport_catalogu
 
 void MakeBase(transport_catalogue::TransportCatalogue& transport_catalogue,
               renderer::RenderSettings& render_settings,
-              graph::RouteSettings& route_settigns,
+              graph::RouteSettings& route_settings,
               json_reader::JsonReader& json_reader) {
 
     transport_catalogue_proto::Catalogue catalogue;
@@ -41,15 +41,15 @@ void MakeBase(transport_catalogue::TransportCatalogue& transport_catalogue,
     json_reader::FillingTransportCatalogue(transport_catalogue, json_reader);
     serialization::SerializeTransportCatalogue(catalogue, transport_catalogue);
     render_settings = json_reader::SetRenderSettings(json_reader.GetRenderSettings());
-    route_settigns = json_reader::SetRoutingSettings(json_reader.GetRouteSettings());
+    route_settings = json_reader::SetRoutingSettings(json_reader.GetRouteSettings());
     serialization::SerializeRenderSettings(catalogue, render_settings);
-    serialization::SerializeRouteSettings(catalogue, route_settigns);
+    serialization::SerializeRouteSettings(catalogue, route_settings);
     serialization::SerializeCatalogue(catalogue, json_reader);
 }
 
 void ProcessRequests(transport_catalogue::TransportCatalogue& transport_catalogue,
                      renderer::RenderSettings& render_settings,
-                     graph::RouteSettings& route_settigns,
+                     graph::RouteSettings& route_settings,
                      json_reader::JsonReader& json_reader,
                      std::ostream& output) {
 
@@ -58,8 +58,8 @@ void ProcessRequests(transport_catalogue::TransportCatalogue& transport_catalogu
     serialization::DeserializeCatalogue(catalogue_proto, json_reader);
     serialization::DeserializeTransportCatalogue(transport_catalogue, catalogue_proto);
     serialization::DeserializeRenderSettings(render_settings, catalogue_proto);
-    serialization::DeserializeRouteSettings(route_settigns, catalogue_proto);
-    QueryProcessing(transport_catalogue, render_settings, route_settigns, json_reader, output);
+    serialization::DeserializeRouteSettings(route_settings, catalogue_proto);
+    QueryProcessing(transport_catalogue, render_settings, route_settings, json_reader, output);
 }
 
 using namespace std::literals;
