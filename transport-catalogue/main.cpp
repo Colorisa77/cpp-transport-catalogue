@@ -82,11 +82,9 @@ int main(int argc, char* argv[]) {
     const std::string_view mode(argv[1]);
 
     if (mode == "make_base"sv) {
-        // make base here
         MakeBase(transport_catalogue, render_settings, route_settings, json_reader);
 
     } else if (mode == "process_requests"sv) {
-        // process requests here
         ProcessRequests(
             transport_catalogue,
             render_settings,
